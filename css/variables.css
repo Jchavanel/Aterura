@@ -1,0 +1,69 @@
+/* ═══════════════════════════════════════════════
+   ESCUDERÍA ATERURA — variables.css
+   Tokens globales de diseño
+═══════════════════════════════════════════════ */
+
+:root {
+  /* ─── Paleta Canaria Metálica Racing ───────────────────────
+     Azul y amarillo de Canarias en versión competición.
+     Se mantienen los nombres de variable originales para
+     no tener que cambiar referencias en otros archivos.
+  ─────────────────────────────────────────────────────────── */
+
+  /* Azul Canario Racing — color de acción principal */
+  --red:        #1458C8;
+  --red-light:  #2070F0;
+
+  /* Dorado / Amarillo Canario metálico */
+  --gold:       #C8980A;
+  --gold-light: #F0B800;
+
+  /* Fondos — negro con tinte azul marino profundo */
+  --dark:       #06080F;
+  --dark-2:     #0A0E1C;
+  --dark-3:     #0F1630;
+  --dark-4:     #162045;
+
+  /* Bordes y tonos intermedios */
+  --mid:        #1E2F60;
+  --muted:      #4A648C;
+  --light:      #8AAAC8;
+  --white:      #EBF2FC;
+
+  /* Tipografía */
+  --font-display:   'Bebas Neue', sans-serif;
+  --font-condensed: 'Barlow Condensed', sans-serif;
+  --font-body:      'Barlow', sans-serif;
+
+  /* Nav height — usada para offset del scroll y secciones */
+  --nav-h:     72px;
+  --nav-h-sm:  60px;
+
+  /* Espaciado de secciones */
+  --section-pad: 100px;
+
+  /* Breakpoints (uso en JS también) */
+  --bp-mobile: 960px;
+}
+
+/* Reset base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scroll suave con offset para que el nav fijo
+   no tape los anclas al navegar */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 16px);
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--red); }
+
+/* Selección de texto */
+::selection { background: var(--red); color: #fff; }

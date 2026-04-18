@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Clasificaciones de rallyes — Escudería Aterura. WRC, CERA España y Campeonato de Canarias.">
+  <title>Clasificaciones — Escudería Aterura</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/nav.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/clasificaciones.css">
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav id="navbar" role="banner">
+  <a href="../index.html" class="nav-logo" aria-label="Escudería Aterura">
+    <img src="../img/logo-aterura-white.png" alt="Escudería Aterura" width="160" height="40">
+  </a>
+  <ul class="nav-desktop" role="menubar">
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-esc">La Escudería
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="nav-dropdown" id="dd-esc" role="menu">
+        <a href="../index.html#escuderia" role="menuitem">Historia</a>
+        <a href="../index.html#escuderia" role="menuitem">El equipo</a>
+        <div class="dd-sep"></div>
+        <a href="../index.html#galeria"   role="menuitem">Galería</a>
+      </div>
+    </li>
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-comp">Competiciones
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="nav-dropdown" id="dd-comp" role="menu">
+        <a href="../index.html#competiciones" role="menuitem">Rallye Villa de Teror</a>
+        <a href="../index.html#competiciones" role="menuitem">Gran Canaria Historic</a>
+        <a href="../index.html#competiciones" role="menuitem">Subida de Tejeda</a>
+        <a href="../index.html#competiciones" role="menuitem">Subida de Arucas</a>
+      </div>
+    </li>
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-info">Información
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="nav-dropdown" id="dd-info" role="menu">
+        <a href="noticias.html"              role="menuitem">Noticias</a>
+        <a href="seguridad.html"             role="menuitem">Seguridad espectadores</a>
+        <a href="../index.html#contacto"     role="menuitem">Inscripciones / Contacto</a>
+      </div>
+    </li>
+    <li class="nav-item nav-cta-item" role="none">
+      <a href="../index.html#contacto" role="menuitem">Contacto</a>
+    </li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></div>
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Navegación">
+  <a href="../index.html" class="mob-direct mob-link">Inicio</a>
+  <a href="../index.html#competiciones" class="mob-direct mob-link">Competiciones</a>
+  <a href="clasificaciones.html" class="mob-direct mob-link" style="color:var(--gold-light)">Clasificaciones</a>
+  <a href="../index.html#contacto" class="mob-direct mob-link">Contacto</a>
+</div>
+
+<!-- ═══ CABECERA ═══ -->
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="../index.html">Inicio</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Clasificaciones</span>
+    </div>
+    <div class="section-label">
+      <div class="section-label-line"></div>
+      <span class="section-label-text">Temporada <span id="season-label">2025</span></span>
+    </div>
+    <h1 class="section-title" style="margin-bottom:8px;">Clasificaciones</h1>
+    <p style="font-size:15px;color:var(--muted);max-width:560px;line-height:1.6;">
+      Consulta las clasificaciones del WRC, Campeonato de España y Campeonato de Canarias en tiempo real. Los datos se actualizan automáticamente cada <strong id="ttl-label" style="color:var(--light);">3 días</strong>.
+    </p>
+  </div>
+</div>
+
+<!-- ═══ PESTAÑAS CAMPEONATO ═══ -->
+<div class="st-championships" role="tablist" aria-label="Campeonatos">
+  <div class="st-championships-inner" id="champTabs"></div>
+</div>
+
+<!-- ═══ PESTAÑAS DISCIPLINA ═══ -->
+<div class="st-disciplines" role="tablist" aria-label="Disciplinas">
+  <div class="st-disciplines-inner" id="discTabs"></div>
+</div>
+
+<!-- ═══ CATEGORÍAS ═══ -->
+<div class="st-categories" id="catTabs" role="tablist" aria-label="Categorías"></div>
+
+<!-- ═══ ESTADO + BOTÓN REFRESH ═══ -->
+<div class="st-statusbar">
+  <div id="statusBar"></div>
+  <button class="st-refresh-btn" id="refreshBtn" aria-label="Forzar actualización">
+    <span class="st-refresh-icon">↻</span> Actualizar ahora
+  </button>
+</div>
+
+<!-- ═══ INFO BOX CUANDO NO HAY SHEET ═══ -->
+<div class="st-config-box" id="configBox" style="display:none;">
+  <h4>Cómo conectar datos reales</h4>
+  <p>Estás viendo datos de ejemplo. Para mostrar clasificaciones reales:</p>
+  <ul>
+    <li>Crea un <a href="https://sheets.google.com" target="_blank" rel="noopener">Google Sheet</a> con el formato indicado en <code>data/standings-config.js</code></li>
+    <li>Publícalo: <em>Archivo → Compartir → Publicar en la web</em></li>
+    <li>Copia el ID del Sheet y pégalo en <code>sheet_id</code> de la configuración</li>
+    <li>O usa el <a href="clasificaciones-admin.html">panel de administración</a> para gestionar los datos</li>
+  </ul>
+</div>
+
+<!-- ═══ TABLA ═══ -->
+<div class="st-container">
+  <div id="tableContainer">
+    <div class="st-loading">Cargando clasificaciones…</div>
+  </div>
+</div>
+
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script>document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());</script>
+<script src="../data/standings-config.js"></script>
+<script src="../data/demo-data.js"></script>
+<script src="../js/clasificaciones.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/animations.js"></script>
+
+<script>
+/* ── UI Controller ── */
+(function () {
+  'use strict';
+
+  /* Estado activo */
+  let activeChamp = Object.keys(STANDINGS_CONFIG.championships)[0];
+  let activeDisc  = null;
+  let activeCat   = null;
+
+  const champTabs    = document.getElementById('champTabs');
+  const discTabs     = document.getElementById('discTabs');
+  const catTabs      = document.getElementById('catTabs');
+  const tableEl      = document.getElementById('tableContainer');
+  const statusEl     = document.getElementById('statusBar');
+  const refreshBtn   = document.getElementById('refreshBtn');
+  const configBox    = document.getElementById('configBox');
+  const ttlLabel     = document.getElementById('ttl-label');
+  const seasonLabel  = document.getElementById('season-label');
+
+  seasonLabel.textContent = STANDINGS_CONFIG.season;
+  ttlLabel.textContent    = `${STANDINGS_CONFIG.default_cache_days} días`;
+
+  /* ── Renderiza pestañas de campeonato ── */
+  function buildChampTabs() {
+    champTabs.innerHTML = '';
+    Object.entries(STANDINGS_CONFIG.championships).forEach(([key, champ]) => {
+      const btn = document.createElement('button');
+      btn.className = 'st-champ-btn' + (key === activeChamp ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', key === activeChamp);
+      btn.setAttribute('aria-controls', 'tableContainer');
+      btn.innerHTML = `<span class="st-champ-icon">${champ.icon}</span>${champ.label}`;
+      btn.addEventListener('click', () => selectChamp(key));
+      champTabs.appendChild(btn);
+    });
+  }
+
+  /* ── Renderiza pestañas de disciplina ── */
+  function buildDiscTabs() {
+    discTabs.innerHTML = '';
+    const discs = STANDINGS_CONFIG.championships[activeChamp]?.disciplines || {};
+    const keys  = Object.keys(discs);
+    if (!activeDisc || !discs[activeDisc]) activeDisc = keys[0];
+
+    keys.forEach(key => {
+      const btn = document.createElement('button');
+      btn.className = 'st-disc-btn' + (key === activeDisc ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', key === activeDisc);
+      btn.textContent = discs[key].label;
+      btn.addEventListener('click', () => selectDisc(key));
+      discTabs.appendChild(btn);
+    });
+  }
+
+  /* ── Renderiza tabs de categoría ── */
+  function buildCatTabs() {
+    catTabs.innerHTML = '';
+    const cats = STANDINGS_CONFIG.championships[activeChamp]?.disciplines?.[activeDisc]?.categories || {};
+    const keys = Object.keys(cats);
+    if (!activeCat || !cats[activeCat]) activeCat = keys[0];
+
+    keys.forEach(key => {
+      const btn = document.createElement('button');
+      btn.className = 'st-cat-btn' + (key === activeCat ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', key === activeCat);
+      btn.textContent = cats[key].label;
+      btn.addEventListener('click', () => selectCat(key));
+      catTabs.appendChild(btn);
+    });
+  }
+
+  /* ── Selección ── */
+  function selectChamp(key) {
+    activeChamp = key;
+    activeDisc  = null;
+    activeCat   = null;
+    buildChampTabs();
+    buildDiscTabs();
+    buildCatTabs();
+    loadTable();
+  }
+
+  function selectDisc(key) {
+    activeDisc = key;
+    activeCat  = null;
+    buildDiscTabs();
+    buildCatTabs();
+    loadTable();
+  }
+
+  function selectCat(key) {
+    activeCat = key;
+    buildCatTabs();
+    loadTable();
+  }
+
+  /* ── Carga y renderiza la tabla ── */
+  async function loadTable(forceRefresh = false) {
+    tableEl.innerHTML = '<div class="st-loading">Cargando…</div>';
+    statusEl.innerHTML = '';
+    configBox.style.display = 'none';
+
+    try {
+      const dataset = await Clasificaciones.getData(activeChamp, activeDisc, activeCat, forceRefresh);
+      Clasificaciones.renderTable(tableEl, dataset);
+      Clasificaciones.renderStatus(statusEl, dataset, activeChamp);
+
+      /* Muestra el infobox si son datos de demo */
+      const hasSheet = !!STANDINGS_CONFIG.championships[activeChamp]?.sheet_id;
+      configBox.style.display = (!hasSheet || dataset?._demo) ? 'block' : 'none';
+
+    } catch (err) {
+      console.error('[Clasificaciones] Error cargando datos:', err);
+      tableEl.innerHTML = '<p class="st-empty">Error cargando los datos. Por favor, inténtalo de nuevo.</p>';
+    }
+  }
+
+  /* ── Botón de actualización forzada ── */
+  refreshBtn.addEventListener('click', async () => {
+    refreshBtn.classList.add('loading');
+    Clasificaciones.Cache.clear(`${activeChamp}::${activeDisc}::${activeCat}`);
+    await loadTable(true);
+    refreshBtn.classList.remove('loading');
+  });
+
+  /* ── Auto-refresh: comprueba al enfocar la pestaña del navegador ── */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      const key    = `${activeChamp}::${activeDisc}::${activeCat}`;
+      const cached = Clasificaciones.Cache.get(key);
+      if (!cached) loadTable(); /* Caché expirada → recarga silenciosa */
+    }
+  });
+
+  /* ── Init ── */
+  buildChampTabs();
+  buildDiscTabs();
+  buildCatTabs();
+  loadTable();
+
+})();
+</script>
+
+</body>
+</html>

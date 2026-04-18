@@ -1,0 +1,390 @@
+/* ═══════════════════════════════════════════════
+   ESCUDERÍA ATERURA — nav.css
+   Barra de navegación, dropdowns y menú móvil
+═══════════════════════════════════════════════ */
+
+/* ══════════════════
+   BARRA PRINCIPAL
+══════════════════ */
+#navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: var(--nav-h);
+  /* Azul marino profundo — no negro puro */
+  background: rgba(6, 8, 20, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(138, 170, 200, 0.08);
+  transition: height 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Al hacer scroll: línea dorada metálica + sombra azul */
+#navbar.scrolled {
+  height: var(--nav-h-sm);
+  border-bottom: 1px solid rgba(240, 184, 0, 0.55);
+  box-shadow:
+    0 1px 0  rgba(240, 184, 0, 0.12),
+    0 8px 32px rgba(6, 8, 20, 0.9);
+}
+
+/* ══════════════════
+   LOGO
+══════════════════ */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.nav-logo img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  transition: height 0.3s ease, opacity 0.2s;
+}
+
+.nav-logo:hover img { opacity: 0.85; }
+
+#navbar.scrolled .nav-logo img { height: 28px; }
+
+/* ══════════════════
+   DESKTOP NAV
+══════════════════ */
+.nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  height: 100%;
+}
+
+/* Item raíz */
+.nav-item {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Botón / enlace raíz */
+.nav-item > a,
+.nav-item > button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0 14px;
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--light);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.nav-item > a:hover,
+.nav-item > button:hover,
+.nav-item.open > button { color: var(--white); }
+
+/* Línea roja inferior como indicador */
+.nav-item > a::after,
+.nav-item > button::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.22s ease;
+}
+.nav-item > a:hover::after,
+.nav-item > button:hover::after,
+.nav-item.open > button::after { transform: scaleX(1); }
+
+/* Chevron */
+.nav-chevron {
+  width: 10px;
+  height: 7px;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+.nav-item.open .nav-chevron { transform: rotate(180deg); }
+
+/* CTA Contacto */
+.nav-item.nav-cta-item { margin-left: 8px; }
+.nav-item.nav-cta-item > a {
+  background: var(--red);
+  color: #fff;
+  padding: 0 20px;
+  height: 38px;
+  align-self: center;
+  transition: background 0.2s;
+}
+.nav-item.nav-cta-item > a:hover { background: var(--red-light); }
+.nav-item.nav-cta-item > a::after { display: none; }
+
+/* ══════════════════
+   DROPDOWN PANEL
+══════════════════ */
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  min-width: 220px;
+  /* Azul marino profundo, coherente con el nav */
+  background: #080C1C;
+  border: 1px solid rgba(138, 170, 200, 0.10);
+  border-top: 2px solid var(--gold-light);
+  padding: 8px 0;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  pointer-events: none;
+  z-index: 300;
+}
+
+.nav-item.open .nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Enlace dentro del dropdown */
+.nav-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--light);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s, padding-left 0.18s;
+}
+
+.nav-dropdown a:hover {
+  color: var(--white);
+  background: rgba(20, 88, 200, 0.10);
+  padding-left: 26px;
+}
+
+/* Icono del enlace */
+.dd-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+.nav-dropdown a:hover .dd-icon { color: var(--gold-light); }
+
+/* Separador dentro del dropdown */
+.dd-sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 6px 0;
+}
+
+/* Variante Redes Sociales */
+.nav-dropdown.dd-social { min-width: 190px; }
+
+/* ══════════════════
+   HAMBURGER — solo móvil
+══════════════════ */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 6px;
+  background: none;
+  border: none;
+  z-index: 201;
+}
+
+.hamburger span {
+  display: block;
+  width: 26px;
+  height: 2px;
+  background: var(--white);
+  transition: all 0.3s ease;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ══════════════════
+   MENÚ MÓVIL — panel deslizante
+══════════════════ */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(320px, 88vw);
+  /* Mismo azul marino profundo que el nav */
+  background: #080C1C;
+  border-left: 1px solid rgba(240, 184, 0, 0.15);
+  z-index: 199;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-direction: column;
+  padding-top: var(--nav-h);
+  padding-bottom: 40px;
+}
+
+.mobile-menu.open {
+  display: flex;
+  transform: translateX(0);
+}
+
+/* Overlay oscuro detrás del menú */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 20, 0.75);
+  z-index: 198;
+  cursor: pointer;
+}
+
+.mobile-overlay.open { display: block; }
+
+/* Grupo / sección en móvil */
+.mob-group { border-bottom: 1px solid rgba(138, 170, 200, 0.08); }
+
+.mob-group-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-condensed);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--light);
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.mob-group-btn:hover { color: var(--white); }
+
+.mob-group-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+.mob-group-btn.open svg { transform: rotate(180deg); }
+
+/* Sub-menú acordeón */
+.mob-sub {
+  display: none;
+  flex-direction: column;
+  background: rgba(20, 88, 200, 0.06);
+  border-top: 1px solid rgba(138, 170, 200, 0.06);
+}
+
+.mob-sub.open { display: flex; }
+
+.mob-sub a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 36px;
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s, padding-left 0.18s;
+}
+
+.mob-sub a:hover { color: var(--white); padding-left: 44px; }
+
+.mob-sub a svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--gold-light);
+}
+
+/* Enlace directo sin subgrupo */
+.mob-direct {
+  display: flex;
+  align-items: center;
+  padding: 16px 28px;
+  font-family: var(--font-condensed);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--light);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(138, 170, 200, 0.08);
+  transition: color 0.2s;
+}
+
+.mob-direct:hover { color: var(--white); }
+
+/* Botón CTA en móvil */
+.mob-cta { margin: 24px 28px 0; }
+
+.mob-cta a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--red);
+  color: #fff;
+  font-family: var(--font-condensed);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 14px 24px;
+  transition: background 0.2s;
+}
+
+.mob-cta a:hover { background: var(--red-light); }
+
+/* ══════════════════
+   RESPONSIVE
+══════════════════ */
+@media (max-width: 960px) {
+  #navbar { padding: 0 24px; }
+
+  .nav-desktop { display: none; }
+  .hamburger  { display: flex; }
+}

@@ -1,0 +1,81 @@
+/* ═══════════════════════════════════════════════
+   ESCUDERÍA ATERURA — base.css
+   Estilos base de cuerpo y tipografía
+═══════════════════════════════════════════════ */
+
+body {
+  background: var(--dark);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+  /* Offset igual al nav fijo para que el contenido
+     no quede tapado en la parte superior */
+  padding-top: var(--nav-h);
+}
+
+/* En páginas interiores el hero no ocupa pantalla completa,
+   así que el padding-top del body ya es suficiente. */
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a { color: inherit; }
+
+/* Utilidades de layout */
+.section-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--section-pad) 40px;
+}
+
+/* Etiqueta de sección (línea + texto) */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.section-label-line {
+  width: 32px;
+  height: 2px;
+  background: var(--red);
+  flex-shrink: 0;
+}
+.section-label-text {
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+/* Título de sección */
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  margin-bottom: 24px;
+}
+
+/* Divisor */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Responsive base */
+@media (max-width: 960px) {
+  :root { --section-pad: 72px; }
+
+  .section-inner { padding: var(--section-pad) 24px; }
+}
+
+@media (max-width: 480px) {
+  :root { --section-pad: 56px; }
+}

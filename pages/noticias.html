@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Noticias — Escudería Aterura">
+  <title>Noticias — Escudería Aterura</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/sections.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <link rel="stylesheet" href="../css/nav.css">
+  <style>
+    .page-hero {
+      background: var(--dark-2);
+      padding: 60px 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .page-hero-inner { max-width: 1280px; margin: 0 auto; }
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--font-condensed); font-size: 12px;
+      font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .breadcrumb a { color: inherit; text-decoration: none; transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--red); }
+    .breadcrumb-sep { color: var(--mid); }
+    @media (max-width: 960px) { .page-hero { padding: 40px 24px; } }
+  </style>
+</head>
+<body>
+
+  <!-- NAV (idéntico al index) -->
+  <nav id="navbar" role="banner">
+    <a href="../index.html" class="nav-logo" aria-label="Escudería Aterura — Inicio">
+      <img src="../img/logo-aterura-white.png" alt="Escudería Aterura" width="160" height="40">
+    </a>
+    <ul class="nav-desktop" role="menubar">
+      <li class="nav-item" role="none">
+        <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-escuderia">La Escudería <svg class="nav-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="nav-dropdown" id="dd-escuderia" role="menu">
+          <a href="../index.html#escuderia" role="menuitem">Historia</a>
+          <a href="../index.html#escuderia" role="menuitem">El equipo</a>
+          <div class="dd-sep"></div>
+          <a href="../index.html#galeria"   role="menuitem">Galería</a>
+        </div>
+      </li>
+      <li class="nav-item" role="none">
+        <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-comp">Competiciones <svg class="nav-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="nav-dropdown" id="dd-comp" role="menu">
+          <a href="rallye-villa-de-teror.html" role="menuitem">Rallye Villa de Teror</a>
+          <a href="gran-canaria-historic.html"  role="menuitem">Gran Canaria Historic</a>
+          <a href="subida-tejeda.html"          role="menuitem">Subida de Tejeda</a>
+          <a href="subida-arucas.html"          role="menuitem">Subida de Arucas</a>
+        </div>
+      </li>
+      <li class="nav-item" role="none">
+        <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-info">Información <svg class="nav-chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="nav-dropdown" id="dd-info" role="menu">
+          <a href="noticias.html"   role="menuitem">Noticias</a>
+          <a href="seguridad.html"  role="menuitem">Seguridad espectadores</a>
+          <a href="../index.html#contacto" role="menuitem">Inscripciones / Contacto</a>
+        </div>
+      </li>
+      <li class="nav-item nav-cta-item" role="none">
+        <a href="../index.html#contacto" role="menuitem">Contacto</a>
+      </li>
+    </ul>
+    <button class="hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></div>
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Navegación">
+    <div class="mob-group">
+      <button class="mob-group-btn" data-mob-group="mob-comp" aria-expanded="false">Competiciones <svg width="12" height="8" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="mob-sub" id="mob-comp">
+        <a href="rallye-villa-de-teror.html" class="mob-link">Rallye Villa de Teror</a>
+        <a href="gran-canaria-historic.html" class="mob-link">Gran Canaria Historic</a>
+        <a href="subida-tejeda.html"         class="mob-link">Subida de Tejeda</a>
+        <a href="subida-arucas.html"         class="mob-link">Subida de Arucas</a>
+      </div>
+    </div>
+    <a href="noticias.html"          class="mob-direct mob-link">Noticias</a>
+    <a href="../index.html#contacto" class="mob-direct mob-link">Contacto</a>
+  </div>
+
+  <!-- CABECERA DE PÁGINA INTERIOR -->
+  <div class="page-hero">
+    <div class="page-hero-inner">
+      <div class="breadcrumb">
+        <a href="../index.html">Inicio</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>Noticias</span>
+      </div>
+      <div class="section-label">
+        <div class="section-label-line"></div>
+        <span class="section-label-text">Actualidad</span>
+      </div>
+      <h1 class="section-title" style="margin-bottom:0;">Noticias</h1>
+    </div>
+  </div>
+
+  <!-- CONTENIDO -->
+  <section style="background: var(--dark);">
+    <div class="section-inner">
+      <p style="color: var(--muted); font-size:15px; text-align:center; padding: 40px 0;">
+        Página de noticias — contenido en construcción.<br>
+        <a href="../index.html" style="color: var(--red);">← Volver al inicio</a>
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-bottom" style="padding-top:0; border-top:none;">
+        <span class="footer-copy">&copy; <span id="year"></span> Escudería Aterura</span>
+        <a href="../index.html" style="font-size:13px; color:var(--muted); text-decoration:none;">← Volver al inicio</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="../js/nav.js"></script>
+  <script src="../js/animations.js"></script>
+</body>
+</html>

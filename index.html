@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Escudería Aterura — Más de 40 años de historia del motor en Gran Canaria. Organización y competición de rallyes en Canarias.">
+  <meta property="og:title" content="Escudería Aterura">
+  <meta property="og:description" content="Más de 40 años de historia del motor en Gran Canaria.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://escuderiaaterura.com">
+  <meta property="og:image" content="img/og-image.jpg">
+  <meta name="theme-color" content="#0a0a0a">
+
+  <title>Escudería Aterura — Motor en Gran Canaria</title>
+
+  <!-- Google Fonts: carga diferida para no bloquear render -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS — orden importante: variables → base → componentes → secciones → animaciones → nav -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/sections.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/nav.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     NAVEGACIÓN FIJA
+═══════════════════════════════════════════ -->
+<nav id="navbar" role="banner">
+
+  <a href="index.html" class="nav-logo" aria-label="Escudería Aterura — Inicio">
+    <img src="img/logo-aterura-white.png" alt="Escudería Aterura" width="160" height="40">
+  </a>
+
+  <!-- Menú desktop con dropdowns -->
+  <ul class="nav-desktop" role="menubar" aria-label="Navegación principal">
+
+    <!-- La Escudería -->
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-escuderia">
+        La Escudería
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-dropdown" id="dd-escuderia" role="menu">
+        <a href="#escuderia" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v3.5l2 1.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Historia
+        </a>
+        <a href="#escuderia" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          El equipo
+        </a>
+        <div class="dd-sep"></div>
+        <a href="#galeria" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="5.5" r="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 11l3-3 2.5 2.5L10 8l4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Galería
+        </a>
+      </div>
+    </li>
+
+    <!-- Competiciones -->
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-comp">
+        Competiciones
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-dropdown" id="dd-comp" role="menu">
+        <a href="#competiciones" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 4H14l-3.5 2.5 1.5 4L8 10l-4 2.5 1.5-4L2 6h4.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+          Rallye Villa de Teror
+        </a>
+        <a href="#competiciones" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4v4l2.5 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Gran Canaria Historic
+        </a>
+        <a href="#competiciones" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><path d="M2 13L8 3l6 10H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          Subida de Tejeda
+        </a>
+        <a href="#competiciones" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><path d="M2 13L8 3l6 10H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          Subida de Arucas
+        </a>
+      </div>
+    </li>
+
+    <!-- Información -->
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-info">
+        Información
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-dropdown" id="dd-info" role="menu">
+        <a href="#noticias" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Noticias
+        </a>
+        <a href="pages/seguridad.html" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2l5.5 3v4c0 3-2.5 5-5.5 6C5.5 14 3 12 3 9V5L8 2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          Seguridad espectadores
+        </a>
+        <a href="#contacto" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" stroke="currentColor" stroke-width="1.2"/><path d="M2 4l6 5 6-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Inscripciones / Contacto
+        </a>
+      </div>
+    </li>
+
+    <!-- Redes Sociales -->
+    <li class="nav-item" role="none">
+      <button role="menuitem" aria-haspopup="true" aria-expanded="false" data-dropdown="dd-social">
+        Redes Sociales
+        <svg class="nav-chevron" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-dropdown dd-social" id="dd-social" role="menu">
+        <a href="https://www.facebook.com/Escuder%C3%ADa-Aterura-127164814037622" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          Facebook
+        </a>
+        <a href="https://www.instagram.com/escuderiaaterura/" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          Instagram
+        </a>
+        <a href="https://x.com/escuderiaterura" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          X (Twitter)
+        </a>
+        <a href="https://www.youtube.com/channel/UCiwivv2mEHWJW43suRwjZeQ" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <svg class="dd-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#0a0a0a"/></svg>
+          YouTube
+        </a>
+      </div>
+    </li>
+
+    <!-- Clasificaciones — acceso directo destacado -->
+    <li class="nav-item" role="none">
+      <a href="pages/clasificaciones.html" role="menuitem" style="color:var(--gold-light);">
+        Clasificaciones
+      </a>
+    </li>
+
+    <!-- CTA Contacto -->
+    <li class="nav-item nav-cta-item" role="none">
+      <a href="#contacto" role="menuitem">Contacto</a>
+    </li>
+
+  </ul>
+
+  <!-- Hamburger (solo móvil ≤960px) -->
+  <button class="hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+    <span></span><span></span><span></span>
+  </button>
+
+</nav>
+
+<!-- Overlay menú móvil -->
+<div class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></div>
+
+<!-- Panel menú móvil -->
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Menú de navegación">
+
+  <!-- La Escudería -->
+  <div class="mob-group">
+    <button class="mob-group-btn" data-mob-group="mob-escuderia" aria-expanded="false">
+      La Escudería
+      <svg width="12" height="8" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mob-sub" id="mob-escuderia">
+      <a href="#escuderia" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.2"/></svg>Historia</a>
+      <a href="#escuderia" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>El equipo</a>
+      <a href="#galeria"   class="mob-link"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>Galería</a>
+    </div>
+  </div>
+
+  <!-- Competiciones -->
+  <div class="mob-group">
+    <button class="mob-group-btn" data-mob-group="mob-comp" aria-expanded="false">
+      Competiciones
+      <svg width="12" height="8" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mob-sub" id="mob-comp">
+      <a href="#competiciones" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 4H14l-3.5 2.5 1.5 4L8 10l-4 2.5 1.5-4L2 6h4.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>Rallye Villa de Teror</a>
+      <a href="#competiciones" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.2"/></svg>Gran Canaria Historic</a>
+      <a href="#competiciones" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><path d="M2 13L8 3l6 10H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Subida de Tejeda</a>
+      <a href="#competiciones" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><path d="M2 13L8 3l6 10H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Subida de Arucas</a>
+    </div>
+  </div>
+
+  <!-- Información -->
+  <div class="mob-group">
+    <button class="mob-group-btn" data-mob-group="mob-info" aria-expanded="false">
+      Información
+      <svg width="12" height="8" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mob-sub" id="mob-info">
+      <a href="#noticias"          class="mob-link"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>Noticias</a>
+      <a href="pages/seguridad.html" class="mob-link"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l5.5 3v4c0 3-2.5 5-5.5 6C5.5 14 3 12 3 9V5L8 2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Seguridad espectadores</a>
+      <a href="#contacto"          class="mob-link"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" stroke="currentColor" stroke-width="1.2"/><path d="M2 4l6 5 6-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Inscripciones / Contacto</a>
+    </div>
+  </div>
+
+  <!-- Redes Sociales -->
+  <div class="mob-group">
+    <button class="mob-group-btn" data-mob-group="mob-social" aria-expanded="false">
+      Redes Sociales
+      <svg width="12" height="8" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mob-sub" id="mob-social">
+      <a href="https://www.facebook.com/Escuder%C3%ADa-Aterura-127164814037622" target="_blank" rel="noopener" class="mob-link"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>Facebook</a>
+      <a href="https://www.instagram.com/escuderiaaterura/"                      target="_blank" rel="noopener" class="mob-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/></svg>Instagram</a>
+      <a href="https://x.com/escuderiaterura"                                    target="_blank" rel="noopener" class="mob-link"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X (Twitter)</a>
+      <a href="https://www.youtube.com/channel/UCiwivv2mEHWJW43suRwjZeQ"        target="_blank" rel="noopener" class="mob-link"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#0a0a0a"/></svg>YouTube</a>
+    </div>
+  </div>
+
+  <a href="pages/clasificaciones.html" class="mob-direct" style="color:var(--gold-light);border-bottom:1px solid rgba(240,184,0,0.15);">
+    🏆 Clasificaciones
+  </a>
+
+  <a href="#contacto" class="mob-direct mob-link">Contacto</a>
+
+  <div class="mob-cta">
+    <a href="#contacto" class="mob-link">
+      Unirme a la escudería
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+
+</div>
+<!-- /menú móvil -->
+
+
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
+<section class="hero" id="inicio" aria-label="Portada">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-lines" aria-hidden="true"></div>
+  <div class="hero-texture" aria-hidden="true"></div>
+  <!-- Sustituir class="hero-image" src por imagen real del rallye -->
+  <!-- <div class="hero-image" style="background-image: url('img/hero-rallye.jpg');"></div> -->
+  <div class="hero-number" aria-hidden="true">40</div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line" aria-hidden="true"></div>
+      <span class="hero-eyebrow-text">Gran Canaria · Automovilismo</span>
+    </div>
+
+    <h1 class="hero-title">Motor<em>sin freno</em>desde 1979</h1>
+
+    <p class="hero-subtitle">
+      Más de 40 años organizando y compitiendo en el deporte del motor en Canarias. La escudería que nació en Teror y creció con Gran Canaria.
+    </p>
+
+    <div class="hero-stats" role="list">
+      <div role="listitem">
+        <div class="hero-stat-num">40<span>+</span></div>
+        <div class="hero-stat-label">Años de historia</div>
+      </div>
+      <div class="hero-stat-divider" aria-hidden="true"></div>
+      <div role="listitem">
+        <div class="hero-stat-num"><span>#</span>1</div>
+        <div class="hero-stat-label">Rallye Villa de Teror</div>
+      </div>
+      <div class="hero-stat-divider" aria-hidden="true"></div>
+      <div role="listitem">
+        <div class="hero-stat-num">40<span>+</span></div>
+        <div class="hero-stat-label">Comisarios de ruta</div>
+      </div>
+    </div>
+
+    <div class="hero-cta">
+      <a href="#competiciones" class="btn-primary">
+        Ver competiciones
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#escuderia" class="btn-ghost">Nuestra historia</a>
+    </div>
+  </div>
+
+  <div class="scroll-indicator" aria-hidden="true">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     TICKER
+═══════════════════════════════════════════ -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <div class="ticker-item"><span>Rallye Villa de Teror</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Gran Canaria Historic Rallye</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Subida de Tejeda</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Subida de Arucas</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Campeonato de Canarias</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Escudería Aterura · desde 1979</span><span class="ticker-dot"></span></div>
+    <!-- duplicado para loop sin corte -->
+    <div class="ticker-item"><span>Rallye Villa de Teror</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Gran Canaria Historic Rallye</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Subida de Tejeda</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Subida de Arucas</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Campeonato de Canarias</span><span class="ticker-dot"></span></div>
+    <div class="ticker-item"><span>Escudería Aterura · desde 1979</span><span class="ticker-dot"></span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     ESCUDERÍA
+═══════════════════════════════════════════ -->
+<section class="about" id="escuderia">
+  <div class="section-inner">
+    <div class="about-grid">
+
+      <div>
+        <div class="section-label reveal">
+          <div class="section-label-line"></div>
+          <span class="section-label-text">Quiénes somos</span>
+        </div>
+        <h2 class="section-title reveal reveal-delay-1">La Escudería<br>Aterura</h2>
+
+        <div class="about-text reveal reveal-delay-2">
+          <p>Fundada en 1979 por un grupo de aficionados al automovilismo de la Villa de Teror, Escudería Aterura nació con un objetivo claro: promover el deporte del motor en Gran Canaria desde sus raíces.</p>
+          <blockquote class="about-highlight">
+            «Hablar de Aterura es hablar de la historia del automovilismo en Gran Canaria.»
+          </blockquote>
+          <p>Más de cuatro décadas después, somos uno de los equipos de organización más experimentados de Canarias, con seis Comisarios Deportivos, dos Secretarios de Carrera y alrededor de cuarenta Comisarios de Ruta acreditados por la Real Federación Española de Automovilismo.</p>
+          <p>Nuestro Rallye Villa de Teror, que comenzó como una prueba provincial, es hoy parte del Calendario Oficial del Campeonato de Rallyes de Canarias.</p>
+        </div>
+
+        <div class="reveal reveal-delay-3" style="margin-top:32px;">
+          <a href="#contacto" class="btn-primary">
+            Únete a la escudería
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="about-milestones reveal reveal-delay-1">
+        <div class="milestone">
+          <div class="milestone-year">1977</div>
+          <div class="milestone-content">
+            <h3>Primer Slalom del Pino</h3>
+            <p>Organizado junto a Escudería Drago-Maspalomas. La chispa que encendió el proyecto.</p>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-year">1979</div>
+          <div class="milestone-content">
+            <h3>Constitución oficial</h3>
+            <p>Se funda formalmente la Escudería Aterura como entidad en Teror, Gran Canaria.</p>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-year">1981</div>
+          <div class="milestone-content">
+            <h3>1er Rallye Villa de Teror</h3>
+            <p>Nace la prueba estrella. Una primera edición que marcaría 40 años de historia.</p>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-year">2000s</div>
+          <div class="milestone-content">
+            <h3>Campeonato de Canarias</h3>
+            <p>El Rallye Villa de Teror se integra en el Calendario Oficial del Campeonato.</p>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-year">2021</div>
+          <div class="milestone-content">
+            <h3>40ª edición histórica</h3>
+            <p>Cuatro décadas de la prueba más emblemática del norte de la isla.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     COMPETICIONES
+═══════════════════════════════════════════ -->
+<section class="competiciones" id="competiciones">
+  <div class="section-inner">
+    <div class="section-label reveal">
+      <div class="section-label-line"></div>
+      <span class="section-label-text">Temporada 2025</span>
+    </div>
+    <h2 class="section-title reveal reveal-delay-1">Competiciones</h2>
+
+    <div class="comp-grid">
+
+      <a href="pages/rallye-villa-de-teror.html" class="comp-card reveal">
+        <span class="comp-card-number" aria-hidden="true">40</span>
+        <span class="badge badge-gold">Prueba estrella</span>
+        <h3>Rallye Villa<br>de Teror</h3>
+        <p>La prueba que lo inició todo. Parte del Campeonato de Rallyes de Canarias y orgullo de Teror desde 1981.</p>
+        <div class="comp-card-meta">
+          <div class="comp-meta-item"><span class="meta-label">Edición</span><span class="meta-val">44ª</span></div>
+          <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Sep 2025</span></div>
+          <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Asfalto</span></div>
+        </div>
+        <div class="comp-card-arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </a>
+
+      <a href="pages/gran-canaria-historic.html" class="comp-card reveal reveal-delay-1">
+        <span class="comp-card-number" aria-hidden="true">8</span>
+        <span class="badge">Historic</span>
+        <h3>Gran Canaria<br>Historic Rallye</h3>
+        <p>Reviviendo la historia del motor clásico en las carreteras de Gran Canaria.</p>
+        <div class="comp-card-meta">
+          <div class="comp-meta-item"><span class="meta-label">Edición</span><span class="meta-val">IX</span></div>
+          <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Sep 2025</span></div>
+          <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Histórico</span></div>
+        </div>
+        <div class="comp-card-arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </a>
+
+      <a href="pages/subida-tejeda.html" class="comp-card reveal reveal-delay-2">
+        <span class="comp-card-number" aria-hidden="true">T</span>
+        <span class="badge badge-outline">Montaña</span>
+        <h3>Subida<br>de Tejeda</h3>
+        <p>Curvas cerradas, desnivel extremo y el Roque Bentayga como telón de fondo.</p>
+        <div class="comp-card-meta">
+          <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Montaña</span></div>
+          <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Por confirmar</span></div>
+        </div>
+        <div class="comp-card-arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </a>
+
+      <a href="pages/subida-arucas.html" class="comp-card reveal reveal-delay-3">
+        <span class="comp-card-number" aria-hidden="true">A</span>
+        <span class="badge badge-outline">Montaña</span>
+        <h3>Subida<br>de Arucas</h3>
+        <p>Velocidad y precisión en las calles de la ciudad del ron en el norte de la isla.</p>
+        <div class="comp-card-meta">
+          <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Montaña</span></div>
+          <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Por confirmar</span></div>
+        </div>
+        <div class="comp-card-arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     GALERÍA
+═══════════════════════════════════════════ -->
+<section class="galeria" id="galeria">
+  <div class="section-inner">
+    <div class="gallery-header">
+      <div>
+        <div class="section-label reveal">
+          <div class="section-label-line"></div>
+          <span class="section-label-text">Imágenes</span>
+        </div>
+        <h2 class="section-title reveal reveal-delay-1">Galería</h2>
+      </div>
+      <a href="pages/galeria.html" class="btn-ghost reveal reveal-delay-2">
+        Ver todo
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+    <div class="gallery-grid reveal">
+      <div class="gallery-item">
+        <div class="gallery-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1"/><circle cx="8.5" cy="8.5" r="1.5" stroke="white" stroke-width="1"/><path d="M21 15l-5-5L5 21" stroke="white" stroke-width="1" stroke-linecap="round"/></svg>
+        </div>
+        <span class="gallery-year-tag" aria-hidden="true">2024</span>
+        <div class="gallery-overlay"><span class="gallery-overlay-text">Rallye Villa de Teror 2024</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1"/><circle cx="8.5" cy="8.5" r="1.5" stroke="white" stroke-width="1"/><path d="M21 15l-5-5L5 21" stroke="white" stroke-width="1" stroke-linecap="round"/></svg></div>
+        <span class="gallery-year-tag" aria-hidden="true">2023</span>
+        <div class="gallery-overlay"><span class="gallery-overlay-text">Gran Canaria Historic 2023</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1"/><circle cx="8.5" cy="8.5" r="1.5" stroke="white" stroke-width="1"/><path d="M21 15l-5-5L5 21" stroke="white" stroke-width="1" stroke-linecap="round"/></svg></div>
+        <span class="gallery-year-tag" aria-hidden="true">2021</span>
+        <div class="gallery-overlay"><span class="gallery-overlay-text">40ª edición Rallye Teror</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1"/><circle cx="8.5" cy="8.5" r="1.5" stroke="white" stroke-width="1"/><path d="M21 15l-5-5L5 21" stroke="white" stroke-width="1" stroke-linecap="round"/></svg></div>
+        <span class="gallery-year-tag" aria-hidden="true">2019</span>
+        <div class="gallery-overlay"><span class="gallery-overlay-text">Rallye Villa de Teror 2019</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1"/><circle cx="8.5" cy="8.5" r="1.5" stroke="white" stroke-width="1"/><path d="M21 15l-5-5L5 21" stroke="white" stroke-width="1" stroke-linecap="round"/></svg></div>
+        <span class="gallery-year-tag" aria-hidden="true">2017</span>
+        <div class="gallery-overlay"><span class="gallery-overlay-text">Rallye Villa de Teror 2017</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1"/><circle cx="8.5" cy="8.5" r="1.5" stroke="white" stroke-width="1"/><path d="M21 15l-5-5L5 21" stroke="white" stroke-width="1" stroke-linecap="round"/></svg></div>
+        <span class="gallery-year-tag" aria-hidden="true">2010</span>
+        <div class="gallery-overlay"><span class="gallery-overlay-text">Archivo histórico 2010</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     NOTICIAS
+═══════════════════════════════════════════ -->
+<section class="noticias" id="noticias">
+  <div class="section-inner">
+    <div class="news-header">
+      <div>
+        <div class="section-label reveal">
+          <div class="section-label-line"></div>
+          <span class="section-label-text">Actualidad</span>
+        </div>
+        <h2 class="section-title reveal reveal-delay-1">Últimas<br>noticias</h2>
+      </div>
+      <a href="pages/noticias.html" class="btn-ghost reveal reveal-delay-2" style="margin-bottom:8px;">
+        Todas las noticias
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+    <div class="news-grid">
+      <div class="news-featured reveal">
+        <p class="news-featured-badge">— Noticia destacada</p>
+        <h3>Enrique Cruz y Yeray Mujica logran su primera victoria en el Rallye Villa de Teror</h3>
+        <p>Los líderes del Campeonato de Canarias de Rallies de Asfalto se coronan en la cuadragésima edición tras un continuo duelo con Luis Monzón y José Carlos Déniz. El podio lo completaron Julián Falcón y Jacob Páez.</p>
+        <p class="news-date">25 de septiembre de 2021</p>
+        <div style="margin-top:24px;">
+          <a href="pages/noticias.html" class="btn-primary">
+            Leer más
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="news-list">
+        <a href="pages/noticias.html" class="news-item reveal reveal-delay-1">
+          <span class="news-item-date">24 sep 2021</span>
+          <h4>La Palma, muy presente en la ceremonia de salida del Rallye</h4>
+          <p>Equipos, aficionados y autoridades rindieron homenaje a la Isla Bonita en el banderazo de inicio.</p>
+        </a>
+        <a href="pages/noticias.html" class="news-item reveal reveal-delay-2">
+          <span class="news-item-date">Próximamente</span>
+          <h4>Convocatoria Rallye Villa de Teror 2025</h4>
+          <p>Abriremos inscripciones próximamente. Mantente atento a nuestras redes.</p>
+        </a>
+        <a href="pages/noticias.html" class="news-item reveal reveal-delay-3">
+          <span class="news-item-date">Próximamente</span>
+          <h4>Calendario completo de pruebas 2025</h4>
+          <p>Publicaremos las fechas definitivas de todas las pruebas de la temporada en breve.</p>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     PATROCINADORES
+═══════════════════════════════════════════ -->
+<section class="sponsors" id="patrocinadores">
+  <div class="section-inner" style="padding-bottom:0;">
+    <div class="section-label sponsors-label-center reveal">
+      <div class="section-label-line"></div>
+      <span class="section-label-text">Patrocinadores y colaboradores</span>
+      <div class="section-label-line"></div>
+    </div>
+  </div>
+
+  <div class="sponsors-scroll-outer" aria-label="Patrocinadores">
+    <div class="sponsors-track" aria-hidden="true">
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Aguas de Teror</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Orvecame</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Cabildo GC</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Ayto. de Teror</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">IID</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">CICAR</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">FALP</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">FCA</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">RFEDA</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">BP Helios</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Grupo Recalvi</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Automotor Canarias</span></div>
+      <!-- duplicado para loop -->
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Aguas de Teror</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Orvecame</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Cabildo GC</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Ayto. de Teror</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">IID</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">CICAR</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">FALP</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">FCA</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">RFEDA</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">BP Helios</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Grupo Recalvi</span></div>
+      <div class="sponsor-logo"><span class="sponsor-logo-text">Automotor Canarias</span></div>
+    </div>
+  </div>
+  <div style="height:80px;"></div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     CONTACTO
+═══════════════════════════════════════════ -->
+<section class="contacto" id="contacto">
+  <div class="section-inner">
+    <div class="contact-grid">
+
+      <div>
+        <div class="section-label reveal">
+          <div class="section-label-line"></div>
+          <span class="section-label-text">Contacto</span>
+        </div>
+        <h2 class="section-title reveal reveal-delay-1">Hablemos<br>de motor</h2>
+        <p class="reveal reveal-delay-2" style="font-size:16px;color:var(--light);line-height:1.7;margin-bottom:32px;">
+          ¿Quieres participar en nuestras pruebas, unirte al equipo de comisarios o colaborar como patrocinador? Escríbenos y te respondemos en menos de 48 horas.
+        </p>
+
+        <div class="contact-detail reveal reveal-delay-2">
+          <div class="contact-detail-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.5"/><polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <span class="contact-detail-text">
+            <a href="mailto:info@escuderiaaterura.com">info@escuderiaaterura.com</a>
+          </span>
+        </div>
+
+        <div class="contact-detail reveal reveal-delay-2">
+          <div class="contact-detail-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <span class="contact-detail-text">Teror, Gran Canaria — Islas Canarias</span>
+        </div>
+
+        <div class="social-links reveal reveal-delay-3" role="list" aria-label="Redes sociales">
+          <a href="https://www.facebook.com/Escuder%C3%ADa-Aterura-127164814037622" class="social-link" aria-label="Facebook" role="listitem" target="_blank" rel="noopener noreferrer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/escuderiaaterura/" class="social-link" aria-label="Instagram" role="listitem" target="_blank" rel="noopener noreferrer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          <a href="https://x.com/escuderiaterura" class="social-link" aria-label="X (Twitter)" role="listitem" target="_blank" rel="noopener noreferrer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="https://www.youtube.com/channel/UCiwivv2mEHWJW43suRwjZeQ" class="social-link" aria-label="YouTube" role="listitem" target="_blank" rel="noopener noreferrer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="var(--dark)"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <div class="reveal reveal-delay-2">
+        <form class="contact-form" id="contactForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nombre">Nombre *</label>
+              <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" autocomplete="given-name" required>
+            </div>
+            <div class="form-group">
+              <label for="apellidos">Apellidos</label>
+              <input type="text" id="apellidos" name="apellidos" placeholder="Tus apellidos" autocomplete="family-name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Correo electrónico *</label>
+            <input type="email" id="email" name="email" placeholder="tu@email.com" autocomplete="email" required>
+          </div>
+          <div class="form-group">
+            <label for="asunto">Asunto *</label>
+            <select id="asunto" name="asunto" required>
+              <option value="" disabled selected>Selecciona un asunto</option>
+              <option value="participacion">Quiero participar como piloto</option>
+              <option value="comisario">Unirme como comisario / voluntario</option>
+              <option value="patrocinio">Información sobre patrocinio</option>
+              <option value="prensa">Acreditación de prensa</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="mensaje">Mensaje *</label>
+            <textarea id="mensaje" name="mensaje" placeholder="Cuéntanos en qué podemos ayudarte…" required></textarea>
+          </div>
+          <div class="form-submit">
+            <span class="form-note">* Campos obligatorios · Respondemos en &lt;48 h.</span>
+            <button type="submit" class="btn-primary" id="submitBtn">
+              Enviar mensaje
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div id="formMessage" class="form-message" role="alert" aria-live="polite"></div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" aria-label="Escudería Aterura">
+          <img src="img/logo-aterura-white.png" alt="Escudería Aterura" width="140" height="35" style="opacity:0.8;">
+        </a>
+        <p>Más de cuatro décadas promoviendo el deporte del motor en Gran Canaria. Una escudería, una familia.</p>
+      </div>
+
+      <nav class="footer-nav" aria-label="Pie de página">
+        <div class="footer-nav-group">
+          <h5>La escudería</h5>
+          <ul>
+            <li><a href="#escuderia">Historia</a></li>
+            <li><a href="#escuderia">El equipo</a></li>
+            <li><a href="#competiciones">Competiciones</a></li>
+            <li><a href="#galeria">Galería</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav-group">
+          <h5>Información</h5>
+          <ul>
+            <li><a href="pages/noticias.html">Noticias</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+            <li><a href="pages/seguridad.html">Seguridad</a></li>
+            <li><a href="#contacto">Inscripciones</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav-group">
+          <h5>Redes sociales</h5>
+          <ul>
+            <li><a href="https://www.facebook.com/Escuder%C3%ADa-Aterura-127164814037622" target="_blank" rel="noopener">Facebook</a></li>
+            <li><a href="https://www.instagram.com/escuderiaaterura/" target="_blank" rel="noopener">Instagram</a></li>
+            <li><a href="https://x.com/escuderiaterura" target="_blank" rel="noopener">X (Twitter)</a></li>
+            <li><a href="https://www.youtube.com/channel/UCiwivv2mEHWJW43suRwjZeQ" target="_blank" rel="noopener">YouTube</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <span class="footer-copy">&copy; <span id="year"></span> Escudería Aterura. Todos los derechos reservados.</span>
+      <div class="footer-legal">
+        <a href="pages/aviso-legal.html">Aviso legal</a>
+        <a href="pages/privacidad.html">Política de privacidad</a>
+        <a href="pages/cookies.html">Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ═══════════════════════════════════════════
+     JS — cargado al final para no bloquear render
+═══════════════════════════════════════════ -->
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+<script src="js/nav.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/form.js"></script>
+
+</body>
+</html>

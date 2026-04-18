@@ -1,0 +1,496 @@
+/* ═══════════════════════════════════════════════
+   ESCUDERÍA ATERURA — sections.css
+   Hero, Sobre nosotros, Secciones, Footer
+═══════════════════════════════════════════════ */
+
+/* ══════════════════
+   HERO
+══════════════════ */
+.hero {
+  /* El body ya tiene padding-top = var(--nav-h),
+     así que el hero empieza justo debajo de la nav.
+     min-height: 100vh hace que ocupe toda la pantalla visible. */
+  position: relative;
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(6,8,15,0.30) 0%,
+      rgba(6,8,15,0.05) 35%,
+      rgba(6,8,15,0.82) 75%,
+      var(--dark) 100%),
+    linear-gradient(115deg, rgba(20,88,200,0.10) 0%, transparent 55%);
+  background-color: #060C20;  /* azul marino profundo */
+}
+
+/* Líneas decorativas de velocidad */
+.hero-lines {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-lines::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 70%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    -15deg,
+    transparent,
+    transparent 60px,
+    rgba(255,255,255,0.018) 60px,
+    rgba(255,255,255,0.018) 62px
+  );
+}
+
+/* Textura de ruido sutil */
+.hero-texture {
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Número grande decorativo */
+.hero-number {
+  position: absolute;
+  right: -20px;
+  bottom: 80px;
+  font-family: var(--font-display);
+  font-size: clamp(180px, 28vw, 380px);
+  color: rgba(255, 255, 255, 0.03);
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Imagen del hero (cuando exista) */
+.hero-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+}
+
+/* Contenido del hero */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 40px 80px;
+  max-width: 900px;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.8s ease both;
+}
+
+.hero-eyebrow-line {
+  width: 40px;
+  height: 2px;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.hero-eyebrow-text {
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(64px, 10vw, 130px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  color: var(--white);
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+
+/* em es display:block — NO usar <br> junto a él en el HTML
+   o aparecerá espacio extra. El line-height del h1 controla
+   el espacio entre las tres líneas. */
+.hero-title em {
+  display: block;
+  font-style: normal;
+  color: var(--gold-light);   /* Amarillo Canario racing */
+  text-shadow: 0 0 60px rgba(240, 184, 0, 0.25);
+}
+
+.hero-subtitle {
+  margin-top: 24px;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--light);
+  max-width: 480px;
+  line-height: 1.6;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+
+/* Stats del hero */
+.hero-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 48px;
+  animation: fadeUp 0.8s 0.3s ease both;
+  flex-wrap: wrap;
+}
+
+.hero-stat-num {
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 1;
+  color: var(--white);
+}
+
+.hero-stat-num span { color: var(--gold-light); }
+
+.hero-stat-label {
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.hero-stat-divider {
+  width: 1px;
+  background: var(--mid);
+  align-self: stretch;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 16px;
+  margin-top: 40px;
+  animation: fadeUp 0.8s 0.35s ease both;
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+  position: absolute;
+  bottom: 32px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: fadeUp 1s 0.5s ease both;
+}
+
+.scroll-indicator span {
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  writing-mode: vertical-rl;
+}
+
+.scroll-line {
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(to bottom, var(--gold-light), transparent);
+  animation: scrollPulse 2s ease infinite;
+}
+
+/* ══════════════════
+   ABOUT / ESCUDERÍA
+══════════════════ */
+.about { background: var(--dark-2); }
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.about-text p {
+  color: var(--light);
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.about-text p:last-child { margin-bottom: 0; }
+
+.about-highlight {
+  font-family: var(--font-condensed);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.4;
+  border-left: 3px solid var(--gold-light);
+  padding-left: 20px;
+  margin: 32px 0;
+  font-style: italic;
+}
+
+/* Timeline de hitos */
+.about-milestones { display: flex; flex-direction: column; }
+
+.milestone {
+  display: flex;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.milestone:last-child { border-bottom: none; }
+
+.milestone-year {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--gold-light);
+  line-height: 1;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.milestone-content h3 {
+  font-family: var(--font-condensed);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+
+.milestone-content p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ══════════════════
+   COMPETICIONES
+══════════════════ */
+.competiciones { background: var(--dark); }
+
+/* ══════════════════
+   GALERÍA
+══════════════════ */
+.galeria { background: var(--dark-2); }
+
+.gallery-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* ══════════════════
+   NOTICIAS
+══════════════════ */
+.noticias { background: var(--dark); }
+
+.news-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 0;
+}
+
+/* ══════════════════
+   PATROCINADORES
+══════════════════ */
+.sponsors { background: var(--dark-2); overflow: hidden; }
+
+.sponsors-label-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.sponsors-label-center .section-label-line { flex: 1; max-width: 80px; }
+
+/* ══════════════════
+   CONTACTO
+══════════════════ */
+.contacto { background: var(--dark-3); }
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.contact-info p {
+  font-size: 16px;
+  color: var(--light);
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.contact-detail {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.contact-detail-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(217, 35, 26, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.contact-detail-icon svg { color: var(--red); }
+
+.contact-detail-text {
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  color: var(--light);
+}
+
+.contact-detail-text a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s;
+}
+.contact-detail-text a:hover { color: var(--red); }
+
+/* ══════════════════
+   FOOTER
+══════════════════ */
+footer {
+  /* Azul marino más oscuro que el resto de secciones,
+     coherente con el nav — no negro puro */
+  background: #05080E;
+  border-top: 1px solid rgba(240, 184, 0, 0.12);
+}
+
+.footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 56px 40px 32px;
+}
+
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}
+
+.footer-brand p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 280px;
+  margin-top: 16px;
+}
+
+.footer-nav {
+  display: flex;
+  gap: 60px;
+  flex-wrap: wrap;
+}
+
+.footer-nav-group h5 {
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.footer-nav-group ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-nav-group a {
+  font-size: 14px;
+  color: var(--light);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-nav-group a:hover { color: var(--red); }
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-copy { font-size: 13px; color: var(--muted); }
+
+.footer-legal { display: flex; gap: 24px; }
+
+.footer-legal a {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-legal a:hover { color: var(--white); }
+
+/* ══════════════════
+   RESPONSIVE SECTIONS
+══════════════════ */
+@media (max-width: 960px) {
+  .hero-content  { padding: 0 24px 72px; }
+  .hero-stats    { gap: 24px; }
+  .hero-number   { font-size: 180px; right: -10px; }
+  .scroll-indicator { right: 24px; }
+
+  .about-grid    { grid-template-columns: 1fr; gap: 48px; }
+  .contact-grid  { grid-template-columns: 1fr; gap: 48px; }
+
+  .footer-top    { flex-direction: column; }
+  .footer-nav    { gap: 32px; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; }
+  .footer-inner  { padding: 48px 24px 28px; }
+}
+
+@media (max-width: 480px) {
+  .hero-title { font-size: 56px; }
+}

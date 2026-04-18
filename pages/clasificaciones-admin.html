@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin Clasificaciones — Escudería Aterura</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/nav.css">
+
+  <style>
+    /* ── Pantalla de PIN ── */
+    .pin-screen {
+      min-height: calc(100vh - var(--nav-h));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dark);
+    }
+    .pin-card {
+      background: var(--dark-3);
+      border: 1px solid rgba(138,170,200,0.1);
+      border-top: 3px solid var(--gold-light);
+      padding: 48px 40px;
+      width: 340px;
+      text-align: center;
+    }
+    .pin-card h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .pin-card p { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+    .pin-input {
+      width: 100%;
+      background: var(--dark-2);
+      border: 1px solid rgba(138,170,200,0.12);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 28px;
+      text-align: center;
+      letter-spacing: 0.3em;
+      padding: 14px;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    .pin-input:focus { border-color: var(--gold-light); }
+    .pin-error { font-size: 13px; color: var(--red); margin-top: 8px; min-height: 20px; }
+
+    /* ── Panel admin ── */
+    .admin-panel { display: none; }
+    .admin-panel.visible { display: block; }
+
+    .admin-header {
+      background: var(--dark-3);
+      border-bottom: 2px solid var(--gold-light);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .admin-header h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--white);
+    }
+    .admin-header p { font-size: 13px; color: var(--muted); }
+
+    .admin-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .admin-section {
+      background: var(--dark-3);
+      border: 1px solid rgba(138,170,200,0.08);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    .admin-section h3 {
+      font-family: var(--font-condensed);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(138,170,200,0.07);
+    }
+
+    /* Formulario de config */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-g { display: flex; flex-direction: column; gap: 6px; }
+    .form-g label {
+      font-family: var(--font-condensed);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .form-g input, .form-g select, .form-g textarea {
+      background: var(--dark-2);
+      border: 1px solid rgba(138,170,200,0.1);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    .form-g input:focus, .form-g select:focus, .form-g textarea:focus {
+      border-color: var(--red);
+    }
+    .form-g input::placeholder { color: var(--muted); font-size: 13px; }
+    .form-g .hint { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .form-g .hint a { color: var(--gold-light); }
+    .form-g textarea { resize: vertical; min-height: 120px; font-size: 13px; font-family: monospace; }
+    .form-full { grid-column: 1/-1; }
+
+    /* Botones admin */
+    .btn-admin {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      font-family: var(--font-condensed);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-save   { background: var(--red); color: #fff; }
+    .btn-save:hover { background: var(--red-light); }
+    .btn-gold   { background: var(--gold-light); color: #06080F; }
+    .btn-gold:hover { background: #FFCC00; }
+    .btn-danger { background: transparent; border: 1px solid rgba(220,60,60,0.4); color: #E05050; }
+    .btn-danger:hover { background: rgba(220,60,60,0.1); }
+    .btn-ghost  { background: transparent; border: 1px solid rgba(138,170,200,0.2); color: var(--light); }
+    .btn-ghost:hover { border-color: rgba(138,170,200,0.5); }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
+    /* Tabla de entrada manual */
+    .manual-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .manual-table th {
+      background: var(--dark-4);
+      font-family: var(--font-condensed);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .manual-table td { padding: 4px 4px; }
+    .manual-table input {
+      background: var(--dark-2);
+      border: 1px solid rgba(138,170,200,0.08);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 13px;
+      padding: 6px 8px;
+      width: 100%;
+      outline: none;
+    }
+    .manual-table input:focus { border-color: var(--gold-light); }
+    .manual-table .td-pt input { width: 48px; text-align: center; }
+
+    /* Status toast */
+    .toast {
+      display: none;
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--dark-3);
+      border: 1px solid rgba(138,170,200,0.12);
+      border-left: 3px solid var(--gold-light);
+      padding: 14px 20px;
+      font-family: var(--font-condensed);
+      font-size: 14px;
+      color: var(--white);
+      z-index: 999;
+      animation: fadeUp 0.3s ease;
+    }
+    .toast.visible { display: block; }
+    .toast.error   { border-left-color: #E05050; }
+
+    /* Cache info */
+    .cache-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(138,170,200,0.05);
+      font-size: 13px;
+      color: var(--light);
+      gap: 12px;
+    }
+    .cache-item:last-child { border-bottom: none; }
+    .cache-key { font-family: monospace; font-size: 12px; color: var(--muted); flex: 1; }
+    .cache-age { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .cache-empty { font-size: 13px; color: var(--muted); padding: 12px 0; }
+
+    @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+    @media (max-width: 768px) {
+      .admin-inner    { padding: 24px; }
+      .admin-header   { padding: 16px 24px; }
+      .admin-section  { padding: 20px; }
+      .config-grid    { grid-template-columns: 1fr; }
+      .form-full      { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV minimal -->
+<nav id="navbar" role="banner" style="position:relative;height:var(--nav-h);">
+  <a href="../index.html" class="nav-logo" aria-label="Escudería Aterura">
+    <img src="../img/logo-aterura-white.png" alt="Escudería Aterura" width="140" height="35">
+  </a>
+  <span style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold-light);">Panel de Administración</span>
+  <a href="clasificaciones.html" style="font-family:var(--font-condensed);font-size:13px;color:var(--muted);text-decoration:none;">← Ver clasificaciones</a>
+</nav>
+
+<!-- ══════════ PANTALLA DE PIN ══════════ -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-card">
+    <h2>Acceso admin</h2>
+    <p>Introduce el PIN para gestionar las clasificaciones</p>
+    <input type="password" class="pin-input" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="current-password" inputmode="numeric">
+    <div class="pin-error" id="pinError"></div>
+    <div style="margin-top:16px;">
+      <button class="btn-admin btn-save" onclick="checkPin()" style="width:100%;justify-content:center;">Entrar</button>
+    </div>
+    <p style="margin-top:20px;font-size:11px;color:var(--muted);">PIN por defecto: <code style="color:var(--gold-light);">1234</code> — Cámbialo en el código antes de publicar.</p>
+  </div>
+</div>
+
+<!-- ══════════ PANEL ADMIN ══════════ -->
+<div class="admin-panel" id="adminPanel">
+
+  <div class="admin-header">
+    <div>
+      <h1>Clasificaciones — Admin</h1>
+      <p>Gestiona los datos de clasificaciones y la configuración de fuentes</p>
+    </div>
+    <button class="btn-admin btn-danger" onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <div class="admin-inner">
+
+    <!-- ── Sección 1: Configuración de Google Sheets ── -->
+    <div class="admin-section">
+      <h3>📊 Configuración de Google Sheets</h3>
+      <p style="font-size:14px;color:var(--light);margin-bottom:20px;line-height:1.6;">
+        Cada campeonato puede tener su propio Google Sheet.
+        <a href="https://sheets.google.com" target="_blank" rel="noopener" style="color:var(--gold-light);">Crea el sheet aquí</a>,
+        publícalo (<em>Archivo → Publicar en la web</em>) y pega el ID abajo.
+        El ID es la cadena larga en la URL del sheet.
+      </p>
+
+      <div class="config-grid">
+        <div class="form-g">
+          <label>Sheet ID — WRC</label>
+          <input type="text" id="cfg-wrc-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+          <span class="hint">Pestañas: WRC-Asfalto-Pilotos, WRC-Asfalto-Copilotos, WRC-Asfalto-Equipos</span>
+        </div>
+        <div class="form-g">
+          <label>Días caché — WRC</label>
+          <input type="number" id="cfg-wrc-ttl" value="3" min="1" max="30">
+          <span class="hint">Días antes de refrescar datos del Sheet</span>
+        </div>
+
+        <div class="form-g">
+          <label>Sheet ID — CERA España</label>
+          <input type="text" id="cfg-cera-id" placeholder="ID de tu Google Sheet para CERA">
+          <span class="hint">Pestañas: CERA-Asfalto-Pilotos, CERA-Montana-Pilotos…</span>
+        </div>
+        <div class="form-g">
+          <label>Días caché — CERA</label>
+          <input type="number" id="cfg-cera-ttl" value="3" min="1" max="30">
+        </div>
+
+        <div class="form-g">
+          <label>Sheet ID — Campeonato Canarias</label>
+          <input type="text" id="cfg-can-id" placeholder="ID de tu Google Sheet para Canarias">
+          <span class="hint">Pestañas: CAN-Asfalto-Pilotos, CAN-Montana-Pilotos, CAN-Regular-Pilotos…</span>
+        </div>
+        <div class="form-g">
+          <label>Días caché — Canarias</label>
+          <input type="number" id="cfg-can-ttl" value="3" min="1" max="30">
+        </div>
+
+        <div class="form-g form-full">
+          <label>Temporada activa</label>
+          <input type="number" id="cfg-season" value="2025" min="2000" max="2099">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-admin btn-save" onclick="saveConfig()">Guardar configuración</button>
+        <button class="btn-admin btn-ghost" onclick="loadConfig()">Recargar</button>
+      </div>
+
+      <div id="configSaved" style="display:none;margin-top:12px;font-family:var(--font-condensed);font-size:13px;color:#3CB371;">
+        ✓ Configuración guardada. Recarga la página de clasificaciones para aplicarla.
+      </div>
+
+      <div style="margin-top:24px;padding:16px;background:rgba(240,184,0,0.06);border:1px solid rgba(240,184,0,0.15);">
+        <h4 style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold-light);margin-bottom:10px;">Estructura del Google Sheet</h4>
+        <pre style="font-size:12px;color:var(--light);line-height:1.7;overflow-x:auto;">
+Fila 1 (cabeceras):  POS | PILOTO | COPILOTO | EQUIPO | VEHICULO | R1 | R2 | R3 | ... | TOTAL
+Fila 2 (pruebas):    -   |   -    |    -     |   -    |    -     | Montecarlo | Suecia | Kenya | ... | -
+Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 | 18 | 25 | ... | 169</pre>
+      </div>
+    </div>
+
+    <!-- ── Sección 2: Actualización forzada ── -->
+    <div class="admin-section">
+      <h3>🔄 Control de caché</h3>
+      <p style="font-size:14px;color:var(--light);margin-bottom:16px;">
+        Gestiona el caché almacenado en el navegador. Al limpiar, la próxima visita a clasificaciones descargará datos frescos.
+      </p>
+
+      <div id="cacheList"></div>
+
+      <div class="btn-row">
+        <button class="btn-admin btn-gold" onclick="refreshCache()">↻ Forzar actualización de todos</button>
+        <button class="btn-admin btn-danger" onclick="clearCache()">🗑 Limpiar toda la caché</button>
+        <button class="btn-admin btn-ghost" onclick="renderCacheList()">Ver caché actual</button>
+      </div>
+    </div>
+
+    <!-- ── Sección 3: Entrada manual de datos ── -->
+    <div class="admin-section">
+      <h3>✏️ Entrada manual de datos</h3>
+      <p style="font-size:14px;color:var(--light);margin-bottom:20px;">
+        Introduce clasificaciones directamente sin Google Sheets. Los datos se guardan en la caché del navegador.
+      </p>
+
+      <div class="config-grid">
+        <div class="form-g">
+          <label>Campeonato</label>
+          <select id="man-champ" onchange="updateManDiscs()">
+            <option value="wrc">WRC</option>
+            <option value="cera">CERA España</option>
+            <option value="canarias">Campeonato Canarias</option>
+          </select>
+        </div>
+        <div class="form-g">
+          <label>Disciplina</label>
+          <select id="man-disc" onchange="updateManCats()">
+            <option value="asfalto">Asfalto</option>
+          </select>
+        </div>
+        <div class="form-g">
+          <label>Categoría</label>
+          <select id="man-cat">
+            <option value="pilotos">Pilotos</option>
+          </select>
+        </div>
+        <div class="form-g">
+          <label>Nombres de pruebas (separados por coma)</label>
+          <input type="text" id="man-rounds" value="R1,R2,R3,R4,R5,R6" placeholder="Montecarlo,Suecia,Kenya,Chile,...">
+          <span class="hint">Usa nombres cortos para que quepan en la tabla</span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;overflow-x:auto;">
+        <table class="manual-table" id="manualTable">
+          <thead>
+            <tr id="manualHeader"></tr>
+          </thead>
+          <tbody id="manualBody"></tbody>
+        </table>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-admin btn-ghost" onclick="addManualRow()">+ Añadir piloto</button>
+        <button class="btn-admin btn-save"  onclick="saveManualData()">💾 Guardar en caché</button>
+        <button class="btn-admin btn-ghost" onclick="exportJSON()">⬇ Exportar JSON</button>
+        <button class="btn-admin btn-ghost" onclick="importJSON()">⬆ Importar JSON</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+    </div>
+
+    <!-- ── Sección 4: Enlace a clasificaciones ── -->
+    <div class="admin-section">
+      <h3>🔗 Accesos rápidos</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="clasificaciones.html" style="font-family:var(--font-condensed);font-size:13px;color:var(--gold-light);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Ver clasificaciones →</a>
+        <a href="../index.html" style="font-family:var(--font-condensed);font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;">← Inicio</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script src="../data/standings-config.js"></script>
+<script src="../data/demo-data.js"></script>
+<script src="../js/clasificaciones.js"></script>
+<script src="../js/nav.js"></script>
+
+<script>
+/* ─── PIN ─── */
+const PIN = '1234'; /* Cambia este PIN antes de publicar */
+const SESSION_KEY = 'aterura_admin_session';
+
+function checkPin() {
+  const input = document.getElementById('pinInput').value;
+  if (input === PIN) {
+    sessionStorage.setItem(SESSION_KEY, 'ok');
+    document.getElementById('pinScreen').style.display  = 'none';
+    document.getElementById('adminPanel').classList.add('visible');
+    loadConfig();
+    renderCacheList();
+    buildManualTable();
+  } else {
+    const err = document.getElementById('pinError');
+    err.textContent = 'PIN incorrecto. Inténtalo de nuevo.';
+    document.getElementById('pinInput').value = '';
+    setTimeout(() => err.textContent = '', 2500);
+  }
+}
+document.getElementById('pinInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPin();
+});
+
+function logout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+/* Auto-login si sesión activa */
+if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
+  document.getElementById('pinScreen').style.display  = 'none';
+  document.getElementById('adminPanel').classList.add('visible');
+}
+
+/* ─── TOAST ─── */
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast visible' + (isError ? ' error' : '');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('visible'), 3500);
+}
+
+/* ─── CONFIG ─── */
+const CFG_LS_KEY = 'aterura_admin_config';
+
+function saveConfig() {
+  const cfg = {
+    wrc_id:   document.getElementById('cfg-wrc-id').value.trim(),
+    wrc_ttl:  parseInt(document.getElementById('cfg-wrc-ttl').value) || 3,
+    cera_id:  document.getElementById('cfg-cera-id').value.trim(),
+    cera_ttl: parseInt(document.getElementById('cfg-cera-ttl').value) || 3,
+    can_id:   document.getElementById('cfg-can-id').value.trim(),
+    can_ttl:  parseInt(document.getElementById('cfg-can-ttl').value) || 3,
+    season:   parseInt(document.getElementById('cfg-season').value) || 2025,
+  };
+  localStorage.setItem(CFG_LS_KEY, JSON.stringify(cfg));
+
+  /* Aplica al objeto de config en memoria */
+  STANDINGS_CONFIG.championships.wrc.sheet_id      = cfg.wrc_id;
+  STANDINGS_CONFIG.championships.wrc.cache_days    = cfg.wrc_ttl;
+  STANDINGS_CONFIG.championships.cera.sheet_id     = cfg.cera_id;
+  STANDINGS_CONFIG.championships.cera.cache_days   = cfg.cera_ttl;
+  STANDINGS_CONFIG.championships.canarias.sheet_id = cfg.can_id;
+  STANDINGS_CONFIG.championships.canarias.cache_days = cfg.can_ttl;
+  STANDINGS_CONFIG.season = cfg.season;
+
+  document.getElementById('configSaved').style.display = 'block';
+  setTimeout(() => document.getElementById('configSaved').style.display = 'none', 4000);
+  showToast('✓ Configuración guardada');
+}
+
+function loadConfig() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem(CFG_LS_KEY) || '{}');
+    document.getElementById('cfg-wrc-id').value  = cfg.wrc_id  || STANDINGS_CONFIG.championships.wrc.sheet_id  || '';
+    document.getElementById('cfg-wrc-ttl').value = cfg.wrc_ttl || STANDINGS_CONFIG.championships.wrc.cache_days || 3;
+    document.getElementById('cfg-cera-id').value  = cfg.cera_id  || STANDINGS_CONFIG.championships.cera.sheet_id  || '';
+    document.getElementById('cfg-cera-ttl').value = cfg.cera_ttl || STANDINGS_CONFIG.championships.cera.cache_days || 3;
+    document.getElementById('cfg-can-id').value  = cfg.can_id  || STANDINGS_CONFIG.championships.canarias.sheet_id  || '';
+    document.getElementById('cfg-can-ttl').value = cfg.can_ttl || STANDINGS_CONFIG.championships.canarias.cache_days || 3;
+    document.getElementById('cfg-season').value  = cfg.season  || STANDINGS_CONFIG.season || 2025;
+  } catch {}
+}
+
+/* ─── CACHÉ ─── */
+function renderCacheList() {
+  const el = document.getElementById('cacheList');
+  const PREFIX = 'aterura_standings_';
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
+  if (!keys.length) { el.innerHTML = '<p class="cache-empty">No hay datos en caché.</p>'; return; }
+  el.innerHTML = keys.map(k => {
+    try {
+      const entry = JSON.parse(localStorage.getItem(k));
+      const age   = Math.round((Date.now() - entry.ts) / 3600000);
+      const exp   = new Date(entry.expires).toLocaleDateString('es-ES');
+      const key   = k.replace(PREFIX, '');
+      return `<div class="cache-item">
+        <span class="cache-key">${key}</span>
+        <span class="cache-age">Hace ${age}h · Expira ${exp}</span>
+        <button class="btn-admin btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="clearKey('${k}')">✕</button>
+      </div>`;
+    } catch { return ''; }
+  }).join('');
+}
+
+function clearKey(k) { localStorage.removeItem(k); renderCacheList(); showToast('Caché eliminada'); }
+function clearCache() { Clasificaciones.Cache.clearAll(); renderCacheList(); showToast('Toda la caché limpiada'); }
+
+async function refreshCache() {
+  clearCache();
+  showToast('Caché limpiada. Los datos se recargarán en la próxima visita.');
+}
+
+/* ─── ENTRADA MANUAL ─── */
+let manRounds = ['R1','R2','R3','R4','R5','R6'];
+
+function getManualSelectors() {
+  return {
+    champ: document.getElementById('man-champ').value,
+    disc:  document.getElementById('man-disc').value,
+    cat:   document.getElementById('man-cat').value,
+  };
+}
+
+function updateManDiscs() {
+  const champ = document.getElementById('man-champ').value;
+  const discs = STANDINGS_CONFIG.championships[champ]?.disciplines || {};
+  const sel   = document.getElementById('man-disc');
+  sel.innerHTML = Object.entries(discs).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+  updateManCats();
+}
+
+function updateManCats() {
+  const { champ, disc } = getManualSelectors();
+  const cats = STANDINGS_CONFIG.championships[champ]?.disciplines?.[disc]?.categories || {};
+  const sel  = document.getElementById('man-cat');
+  sel.innerHTML = Object.entries(cats).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+}
+
+function buildManualTable(rows = []) {
+  manRounds = document.getElementById('man-rounds').value.split(',').map(s => s.trim()).filter(Boolean);
+  const header = document.getElementById('manualHeader');
+  const body   = document.getElementById('manualBody');
+
+  header.innerHTML = `
+    <th>Pos</th><th>Piloto</th><th>Copiloto</th><th>Equipo</th><th>Vehículo</th>
+    ${manRounds.map((r,i) => `<th>R${i+1}<br><small>${r}</small></th>`).join('')}
+    <th>Total</th><th></th>`;
+
+  body.innerHTML = '';
+  (rows.length ? rows : [{}]).forEach(row => addManualRow(row));
+}
+
+document.getElementById('man-rounds').addEventListener('change', () => buildManualTable());
+
+function addManualRow(data = {}) {
+  const body = document.getElementById('manualBody');
+  const i    = body.children.length + 1;
+  const tr   = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="number" value="${data.pos || i}" style="width:44px;text-align:center"></td>
+    <td><input type="text" value="${data.piloto || ''}" placeholder="Piloto"></td>
+    <td><input type="text" value="${data.copiloto || ''}" placeholder="Copiloto"></td>
+    <td><input type="text" value="${data.equipo  || ''}" placeholder="Equipo"></td>
+    <td><input type="text" value="${data.vehiculo || ''}" placeholder="Vehículo"></td>
+    ${manRounds.map((_,j) => `<td class="td-pt"><input type="number" value="${data.pts?.[j] ?? ''}" placeholder="-" style="width:48px;text-align:center"></td>`).join('')}
+    <td><input type="number" value="${data.total || ''}" style="width:56px;text-align:center"></td>
+    <td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button></td>`;
+  body.appendChild(tr);
+}
+
+function getManualDataset() {
+  const rounds = manRounds;
+  const rows   = Array.from(document.getElementById('manualBody').children).map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    const pts = [];
+    for (let j = 5; j < 5 + rounds.length; j++) {
+      const v = parseInt(inputs[j]?.value);
+      pts.push(isNaN(v) ? null : v);
+    }
+    return {
+      pos:      parseInt(inputs[0].value) || 0,
+      piloto:   inputs[1].value || '—',
+      copiloto: inputs[2].value || '—',
+      equipo:   inputs[3].value || '—',
+      vehiculo: inputs[4].value || '—',
+      pts,
+      total: parseInt(inputs[5 + rounds.length]?.value) || pts.reduce((s,v) => s + (v||0), 0)
+    };
+  });
+  return { rounds, rows };
+}
+
+function saveManualData() {
+  const { champ, disc, cat } = getManualSelectors();
+  const key     = `${champ}::${disc}::${cat}`;
+  const dataset = getManualDataset();
+  const days    = STANDINGS_CONFIG.championships[champ]?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
+  Clasificaciones.Cache.set(key, dataset, days);
+  showToast(`✓ Datos guardados para ${champ} / ${disc} / ${cat}`);
+  renderCacheList();
+}
+
+function exportJSON() {
+  const { champ, disc, cat } = getManualSelectors();
+  const dataset = getManualDataset();
+  const blob    = new Blob([JSON.stringify(dataset, null, 2)], { type: 'application/json' });
+  const a       = document.createElement('a');
+  a.href        = URL.createObjectURL(blob);
+  a.download    = `standings-${champ}-${disc}-${cat}.json`;
+  a.click();
+}
+
+function importJSON() { document.getElementById('importFile').click(); }
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      buildManualTable(data.rows || []);
+      if (data.rounds) document.getElementById('man-rounds').value = data.rounds.join(',');
+      showToast('JSON importado correctamente');
+    } catch { showToast('Error leyendo el JSON', true); }
+  };
+  reader.readAsText(file);
+}
+
+/* Init */
+if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
+  loadConfig();
+  renderCacheList();
+  buildManualTable();
+  updateManDiscs();
+}
+</script>
+
+</body>
+</html>
