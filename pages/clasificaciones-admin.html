@@ -594,7 +594,8 @@ function checkPin() {
     document.getElementById('adminPanel').classList.add('visible');
     loadConfig();
     renderCacheList();
-    buildManualTable();
+    updateManDiscs();   /* Carga también los datos guardados del primer combo */
+    loadNextRally();
   } else {
     const err = document.getElementById('pinError');
     err.textContent = 'PIN incorrecto. Inténtalo de nuevo.';
@@ -714,6 +715,7 @@ function updateManDiscs() {
   const sel   = document.getElementById('man-disc');
   sel.innerHTML = Object.entries(discs).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
   updateManCats();
+  /* loadManualFromCache() ya lo llama updateManCats al final */
 }
 
 function updateManCats() {
@@ -721,6 +723,69 @@ function updateManCats() {
   const cats = STANDINGS_CONFIG.championships[champ]?.disciplines?.[disc]?.categories || {};
   const sel  = document.getElementById('man-cat');
   sel.innerHTML = Object.entries(cats).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+  loadManualFromCache();
+}
+
+/* Se llama también al cambiar la categoría directamente */
+document.getElementById('man-cat').addEventListener('change', loadManualFromCache);
+
+/**
+ * Carga en la tabla los datos guardados en caché para el combo
+ * campeonato + disciplina + categoría actualmente seleccionado.
+ * Si no hay datos guardados, deja la tabla vacía (10 filas en blanco).
+ */
+function loadManualFromCache() {
+  const { champ, disc, cat } = getManualSelectors();
+  const key     = `${champ}::${disc}::${cat}`;
+  const cached  = Clasificaciones.Cache.get(key);
+  const champCfg = STANDINGS_CONFIG.championships[champ];
+
+  /* Actualiza el indicador de estado junto al título */
+  updateManualStatus(champ, disc, cat, cached);
+
+  if (cached?.data) {
+    /* Restaura los nombres de pruebas */
+    if (cached.data.rounds?.length) {
+      document.getElementById('man-rounds').value = cached.data.rounds.join(',');
+    }
+    buildManualTable(cached.data.rows || []);
+  } else {
+    /* Sin datos: tabla vacía con pruebas por defecto según campeonato */
+    const defaultRounds = {
+      wrc:      'Montecarlo,Suecia,Kenya,Chile,Rally1,Finlandia,Gran Bretaña',
+      cera:     'La Llana,Lorca,Llanes,RallyRACC,Pozoblanco',
+      canarias: 'RVdT,GC Historic,Sub.Tejeda,Sub.Arucas,Fuerteventura',
+    };
+    document.getElementById('man-rounds').value = defaultRounds[champ] || 'R1,R2,R3,R4,R5';
+    buildManualTable([]);
+  }
+}
+
+/** Muestra un badge junto al selector indicando si hay datos guardados */
+function updateManualStatus(champ, disc, cat, cached) {
+  let badge = document.getElementById('man-cache-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.id = 'man-cache-badge';
+    badge.style.cssText = 'font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;margin-left:12px;';
+    const title = document.querySelector('#manualTable')?.closest('.admin-section')?.querySelector('h3');
+    if (title) title.appendChild(badge);
+  }
+
+  if (cached?.data?.rows?.length) {
+    const d    = new Date(cached.ts);
+    const fmt  = d.toLocaleDateString('es-ES', { day:'2-digit', month:'short' }) + ' ' +
+                 d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+    badge.textContent = `✓ Guardado ${fmt}`;
+    badge.style.background = 'rgba(60,179,113,0.12)';
+    badge.style.color      = '#3CB371';
+    badge.style.border     = '1px solid rgba(60,179,113,0.25)';
+  } else {
+    badge.textContent = 'Sin datos guardados';
+    badge.style.background = 'rgba(240,184,0,0.07)';
+    badge.style.color      = 'var(--gold-light)';
+    badge.style.border     = '1px solid rgba(240,184,0,0.2)';
+  }
 }
 
 function buildManualTable(rows = []) {
@@ -778,6 +843,8 @@ function addManualRow(data = {}, posNum) {
 
 function clearManualTable() {
   buildManualTable([]);
+  const { champ, disc, cat } = getManualSelectors();
+  updateManualStatus(champ, disc, cat, null);
 }
 
 function getManualDataset() {
@@ -824,6 +891,9 @@ function saveManualData() {
   if (!dataset.rows.length) { showToast('No hay datos para guardar', true); return; }
   const days = STANDINGS_CONFIG.championships[champ]?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
   Clasificaciones.Cache.set(key, dataset, days);
+  /* Refresca el badge de estado */
+  const cached = Clasificaciones.Cache.get(key);
+  updateManualStatus(champ, disc, cat, cached);
   showToast(`✓ Top ${dataset.rows.length} guardado — ${champ} / ${disc} / ${cat}`);
   renderCacheList();
 }
@@ -848,7 +918,9 @@ function handleImport(e) {
       const data = JSON.parse(ev.target.result);
       if (data.rounds) document.getElementById('man-rounds').value = data.rounds.join(',');
       buildManualTable(data.rows || []);
-      showToast('JSON importado correctamente');
+      const { champ, disc, cat } = getManualSelectors();
+      updateManualStatus(champ, disc, cat, null); /* Importado pero no guardado aún */
+      showToast('JSON importado — pulsa Guardar para persistirlo');
     } catch { showToast('Error leyendo el JSON', true); }
   };
   reader.readAsText(file);
@@ -894,8 +966,7 @@ function loadNextRally() {
 if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
   loadConfig();
   renderCacheList();
-  buildManualTable();
-  updateManDiscs();
+  updateManDiscs();     /* Construye selectores Y carga caché del primer combo */
   loadNextRally();
 }
 </script>
