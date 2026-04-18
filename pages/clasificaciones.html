@@ -92,6 +92,26 @@
   </div>
 </div>
 
+<!-- ═══ PRÓXIMO RALLY ═══ -->
+<div class="next-rally-bar" id="nextRallyBar" style="display:none;">
+  <div class="next-rally-inner">
+    <span class="next-rally-label">Próximo rally</span>
+    <div>
+      <div class="next-rally-name" id="nrName"></div>
+      <div class="next-rally-meta" id="nrMeta"></div>
+    </div>
+    <div class="next-rally-countdown" id="nrCountdown">
+      <div class="cd-unit"><div class="cd-num" id="cd-d">--</div><div class="cd-label">días</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-unit"><div class="cd-num" id="cd-h">--</div><div class="cd-label">horas</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-unit"><div class="cd-num" id="cd-m">--</div><div class="cd-label">min</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-unit"><div class="cd-num" id="cd-s">--</div><div class="cd-label">seg</div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ PESTAÑAS CAMPEONATO ═══ -->
 <div class="st-championships" role="tablist" aria-label="Campeonatos">
   <div class="st-championships-inner" id="champTabs"></div>
@@ -159,6 +179,26 @@
 
   seasonLabel.textContent = STANDINGS_CONFIG.season;
   ttlLabel.textContent    = `${STANDINGS_CONFIG.default_cache_days} días`;
+
+  /* Lee la configuración guardada desde el admin y la aplica */
+  (function applyAdminConfig() {
+    try {
+      const cfg = JSON.parse(localStorage.getItem('aterura_admin_config') || 'null');
+      if (!cfg) return;
+      if (cfg.season) {
+        STANDINGS_CONFIG.season = cfg.season;
+        seasonLabel.textContent = cfg.season;
+      }
+      const ttl = cfg.wrc_ttl || cfg.cera_ttl || cfg.can_ttl || STANDINGS_CONFIG.default_cache_days;
+      ttlLabel.textContent = `${ttl} días`;
+      if (cfg.wrc_id)  STANDINGS_CONFIG.championships.wrc.sheet_id      = cfg.wrc_id;
+      if (cfg.cera_id) STANDINGS_CONFIG.championships.cera.sheet_id     = cfg.cera_id;
+      if (cfg.can_id)  STANDINGS_CONFIG.championships.canarias.sheet_id = cfg.can_id;
+      if (cfg.wrc_ttl)  STANDINGS_CONFIG.championships.wrc.cache_days      = cfg.wrc_ttl;
+      if (cfg.cera_ttl) STANDINGS_CONFIG.championships.cera.cache_days     = cfg.cera_ttl;
+      if (cfg.can_ttl)  STANDINGS_CONFIG.championships.canarias.cache_days = cfg.can_ttl;
+    } catch {}
+  })();
 
   /* ── Renderiza pestañas de campeonato ── */
   function buildChampTabs() {
@@ -264,9 +304,52 @@
     if (!document.hidden) {
       const key    = `${activeChamp}::${activeDisc}::${activeCat}`;
       const cached = Clasificaciones.Cache.get(key);
-      if (!cached) loadTable(); /* Caché expirada → recarga silenciosa */
+      if (!cached) loadTable();
     }
   });
+
+  /* ── Próximo rally — cuenta atrás ── */
+  (function initNextRally() {
+    const bar = document.getElementById('nextRallyBar');
+    const cdD = document.getElementById('cd-d');
+    const cdH = document.getElementById('cd-h');
+    const cdM = document.getElementById('cd-m');
+    const cdS = document.getElementById('cd-s');
+    let targetMs = null;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tick() {
+      const diff = targetMs - Date.now();
+      if (diff <= 0) {
+        [cdD,cdH,cdM,cdS].forEach(el => el.textContent = '00');
+        document.getElementById('nrMeta').textContent += ' — ¡En curso!';
+        clearInterval(tick._id);
+        return;
+      }
+      cdD.textContent = pad(Math.floor(diff / 864e5));
+      cdH.textContent = pad(Math.floor((diff % 864e5) / 36e5));
+      cdM.textContent = pad(Math.floor((diff % 36e5)  / 6e4));
+      cdS.textContent = pad(Math.floor((diff % 6e4)   / 1e3));
+      cdS.classList.add('pulse');
+      setTimeout(() => cdS.classList.remove('pulse'), 400);
+    }
+
+    try {
+      const r = JSON.parse(localStorage.getItem('aterura_next_rally') || 'null');
+      if (!r?.date) return;
+      targetMs = new Date(r.date + 'T00:00:00').getTime();
+      if (isNaN(targetMs)) return;
+      document.getElementById('nrName').textContent = r.name || '';
+      document.getElementById('nrMeta').textContent = [
+        r.champ, r.location,
+        new Date(r.date).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
+      ].filter(Boolean).join(' · ');
+      bar.style.display = 'block';
+      tick();
+      tick._id = setInterval(tick, 1000);
+    } catch {}
+  })();
 
   /* ── Init ── */
   buildChampTabs();

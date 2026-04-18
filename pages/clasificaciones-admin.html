@@ -494,12 +494,17 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
         </div>
         <div class="form-g">
           <label>Nombres de pruebas (separados por coma)</label>
-          <input type="text" id="man-rounds" value="R1,R2,R3,R4,R5,R6" placeholder="Montecarlo,Suecia,Kenya,Chile,...">
-          <span class="hint">Usa nombres cortos para que quepan en la tabla</span>
+          <input type="text" id="man-rounds" value="R1,R2,R3,R4,R5,R6" placeholder="RVdT,GC Historic,Sub.Tejeda,...">
+          <span class="hint">Nombres cortos · Máx. 12 caracteres cada uno</span>
         </div>
       </div>
 
-      <div style="margin-top:20px;overflow-x:auto;">
+      <p style="font-size:13px;color:var(--muted);margin:16px 0 12px;">
+        La tabla siempre muestra las <strong style="color:var(--white);">10 primeras posiciones</strong>.
+        Rellena solo las que tengan datos — las posiciones vacías se ignoran al guardar.
+      </p>
+
+      <div style="overflow-x:auto;border:1px solid rgba(138,170,200,0.08);">
         <table class="manual-table" id="manualTable">
           <thead>
             <tr id="manualHeader"></tr>
@@ -509,15 +514,53 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
       </div>
 
       <div class="btn-row">
-        <button class="btn-admin btn-ghost" onclick="addManualRow()">+ Añadir piloto</button>
-        <button class="btn-admin btn-save"  onclick="saveManualData()">💾 Guardar en caché</button>
+        <button class="btn-admin btn-save"  onclick="saveManualData()">💾 Guardar clasificación</button>
+        <button class="btn-admin btn-ghost" onclick="clearManualTable()">↺ Limpiar tabla</button>
         <button class="btn-admin btn-ghost" onclick="exportJSON()">⬇ Exportar JSON</button>
         <button class="btn-admin btn-ghost" onclick="importJSON()">⬆ Importar JSON</button>
       </div>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
     </div>
 
-    <!-- ── Sección 5: Enlace a clasificaciones ── -->
+    <!-- ── Sección 5: Próximo Rally ── -->
+    <div class="admin-section">
+      <h3>🏁 Próximo rally — cuenta atrás</h3>
+      <p style="font-size:14px;color:var(--light);margin-bottom:20px;line-height:1.6;">
+        Configura el nombre, fecha y campeonato del próximo evento. Se muestra en la página de clasificaciones como widget de cuenta atrás para mantener la atención del visitante.
+      </p>
+      <div class="config-grid">
+        <div class="form-g">
+          <label>Nombre del rally</label>
+          <input type="text" id="next-name" placeholder="Rallye Villa de Teror 2026">
+        </div>
+        <div class="form-g">
+          <label>Campeonato</label>
+          <select id="next-champ">
+            <option value="Campeonato Canarias">Campeonato Canarias</option>
+            <option value="CERA España">CERA España</option>
+            <option value="Mundial WRC">Mundial WRC</option>
+          </select>
+        </div>
+        <div class="form-g">
+          <label>Fecha de inicio</label>
+          <input type="date" id="next-date">
+          <span class="hint">Se calcula la cuenta atrás desde hoy hasta esta fecha</span>
+        </div>
+        <div class="form-g">
+          <label>Localización</label>
+          <input type="text" id="next-location" placeholder="Teror, Gran Canaria">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-admin btn-save" onclick="saveNextRally()">Guardar próximo rally</button>
+        <button class="btn-admin btn-danger" onclick="clearNextRally()">Eliminar</button>
+      </div>
+      <div id="nextRallySaved" style="display:none;margin-top:12px;font-family:var(--font-condensed);font-size:13px;color:#3CB371;">
+        ✓ Próximo rally guardado. Visible en la página de clasificaciones.
+      </div>
+    </div>
+
+    <!-- ── Sección 7: Accesos rápidos ── -->
     <div class="admin-section">
       <h3>🔗 Accesos rápidos</h3>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -684,52 +727,92 @@ function buildManualTable(rows = []) {
   manRounds = document.getElementById('man-rounds').value.split(',').map(s => s.trim()).filter(Boolean);
   const header = document.getElementById('manualHeader');
   const body   = document.getElementById('manualBody');
+  const FIXED  = 10;
 
   header.innerHTML = `
-    <th>Pos</th><th>Piloto</th><th>Copiloto</th><th>Equipo</th><th>Vehículo</th>
-    ${manRounds.map((r,i) => `<th>R${i+1}<br><small>${r}</small></th>`).join('')}
-    <th>Total</th><th></th>`;
+    <th style="width:46px;text-align:center">Pos</th>
+    <th style="min-width:120px">Piloto</th>
+    <th style="min-width:120px">Copiloto</th>
+    <th style="min-width:110px">Equipo</th>
+    <th style="min-width:110px">Vehículo</th>
+    ${manRounds.map((r,i) => `<th style="width:52px;text-align:center">R${i+1}<br><small style="font-size:9px;font-weight:400;color:var(--muted)">${r}</small></th>`).join('')}
+    <th style="width:58px;text-align:center">Total</th>`;
 
   body.innerHTML = '';
-  (rows.length ? rows : [{}]).forEach(row => addManualRow(row));
+  for (let i = 0; i < FIXED; i++) {
+    const row = rows[i] || {};
+    addManualRow(row, i + 1);
+  }
 }
 
-document.getElementById('man-rounds').addEventListener('change', () => buildManualTable());
+document.getElementById('man-rounds').addEventListener('change', () => {
+  /* Reconstruye cabeceras pero conserva los datos existentes */
+  const currentData = getManualDataset().rows;
+  buildManualTable(currentData);
+});
 
-function addManualRow(data = {}) {
+const FIXED_ROWS = 10;
+
+function addManualRow(data = {}, posNum) {
   const body = document.getElementById('manualBody');
-  const i    = body.children.length + 1;
+  const i    = posNum || body.children.length + 1;
   const tr   = document.createElement('tr');
+  const isEmpty = !data.piloto || data.piloto === '—';
+
+  /* Fila con fondo alternado leve */
+  if (i <= 3) tr.style.background = i === 1 ? 'rgba(240,184,0,0.04)' : 'rgba(138,170,200,0.02)';
+
   tr.innerHTML = `
-    <td><input type="number" value="${data.pos || i}" style="width:44px;text-align:center"></td>
-    <td><input type="text" value="${data.piloto || ''}" placeholder="Piloto"></td>
-    <td><input type="text" value="${data.copiloto || ''}" placeholder="Copiloto"></td>
-    <td><input type="text" value="${data.equipo  || ''}" placeholder="Equipo"></td>
-    <td><input type="text" value="${data.vehiculo || ''}" placeholder="Vehículo"></td>
-    ${manRounds.map((_,j) => `<td class="td-pt"><input type="number" value="${data.pts?.[j] ?? ''}" placeholder="-" style="width:48px;text-align:center"></td>`).join('')}
-    <td><input type="number" value="${data.total || ''}" style="width:56px;text-align:center"></td>
-    <td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button></td>`;
+    <td style="text-align:center;padding:3px 4px;">
+      <span style="font-family:var(--font-display);font-size:20px;color:${i<=3?'var(--gold-light)':'var(--muted)'}">${i}</span>
+      <input type="hidden" value="${i}">
+    </td>
+    <td style="padding:3px 4px;"><input type="text" value="${data.piloto && data.piloto!=='—' ? data.piloto : ''}" placeholder="Piloto ${i}"></td>
+    <td style="padding:3px 4px;"><input type="text" value="${data.copiloto && data.copiloto!=='—' ? data.copiloto : ''}" placeholder="Copiloto"></td>
+    <td style="padding:3px 4px;"><input type="text" value="${data.equipo && data.equipo!=='—' ? data.equipo : ''}" placeholder="Equipo"></td>
+    <td style="padding:3px 4px;"><input type="text" value="${data.vehiculo && data.vehiculo!=='—' ? data.vehiculo : ''}" placeholder="Vehículo"></td>
+    ${manRounds.map((_,j) => `<td style="padding:3px 2px;"><input type="number" value="${data.pts?.[j] != null ? data.pts[j] : ''}" placeholder="—" style="width:48px;text-align:center"></td>`).join('')}
+    <td style="padding:3px 4px;"><input type="number" value="${data.total || ''}" placeholder="0" style="width:54px;text-align:center;font-weight:700;color:var(--gold-light)"></td>`;
   body.appendChild(tr);
+}
+
+function clearManualTable() {
+  buildManualTable([]);
 }
 
 function getManualDataset() {
   const rounds = manRounds;
-  const rows   = Array.from(document.getElementById('manualBody').children).map(tr => {
-    const inputs = tr.querySelectorAll('input');
+  const rows = [];
+  Array.from(document.getElementById('manualBody').children).forEach((tr, idx) => {
+    const inputs = tr.querySelectorAll('input[type="text"], input[type="number"]:not([type="hidden"])');
+    /* inputs layout: [hidden-pos], piloto, copiloto, equipo, vehiculo, pt0..ptN, total */
+    const allInputs = tr.querySelectorAll('input');
+    /* Skip the hidden position input (first), then: text0=piloto, text1=copiloto, text2=equipo, text3=vehiculo */
+    const textInputs = Array.from(tr.querySelectorAll('input[type="text"]'));
+    const numInputs  = Array.from(tr.querySelectorAll('input[type="number"]'));
+
+    const piloto = textInputs[0]?.value.trim() || '';
+    if (!piloto) return; /* Fila vacía, omitir */
+
     const pts = [];
-    for (let j = 5; j < 5 + rounds.length; j++) {
-      const v = parseInt(inputs[j]?.value);
+    for (let j = 0; j < rounds.length; j++) {
+      const v = parseInt(numInputs[j]?.value);
       pts.push(isNaN(v) ? null : v);
     }
-    return {
-      pos:      parseInt(inputs[0].value) || 0,
-      piloto:   inputs[1].value || '—',
-      copiloto: inputs[2].value || '—',
-      equipo:   inputs[3].value || '—',
-      vehiculo: inputs[4].value || '—',
+    const totalInput = parseInt(numInputs[rounds.length]?.value);
+    const total = isNaN(totalInput)
+      ? pts.reduce((s, v) => s + (v || 0), 0)
+      : totalInput;
+
+    rows.push({
+      pos:      idx + 1,
+      piloto:   piloto,
+      copiloto: textInputs[1]?.value.trim() || '—',
+      equipo:   textInputs[2]?.value.trim() || '—',
+      vehiculo: textInputs[3]?.value.trim() || '—',
       pts,
-      total: parseInt(inputs[5 + rounds.length]?.value) || pts.reduce((s,v) => s + (v||0), 0)
-    };
+      total
+    });
   });
   return { rounds, rows };
 }
@@ -738,9 +821,10 @@ function saveManualData() {
   const { champ, disc, cat } = getManualSelectors();
   const key     = `${champ}::${disc}::${cat}`;
   const dataset = getManualDataset();
-  const days    = STANDINGS_CONFIG.championships[champ]?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
+  if (!dataset.rows.length) { showToast('No hay datos para guardar', true); return; }
+  const days = STANDINGS_CONFIG.championships[champ]?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
   Clasificaciones.Cache.set(key, dataset, days);
-  showToast(`✓ Datos guardados para ${champ} / ${disc} / ${cat}`);
+  showToast(`✓ Top ${dataset.rows.length} guardado — ${champ} / ${disc} / ${cat}`);
   renderCacheList();
 }
 
@@ -762,20 +846,57 @@ function handleImport(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      buildManualTable(data.rows || []);
       if (data.rounds) document.getElementById('man-rounds').value = data.rounds.join(',');
+      buildManualTable(data.rows || []);
       showToast('JSON importado correctamente');
     } catch { showToast('Error leyendo el JSON', true); }
   };
   reader.readAsText(file);
 }
 
-/* Init */
+/* ─── PRÓXIMO RALLY ─── */
+const NEXT_RALLY_KEY = 'aterura_next_rally';
+
+function saveNextRally() {
+  const rally = {
+    name:     document.getElementById('next-name').value.trim(),
+    champ:    document.getElementById('next-champ').value,
+    date:     document.getElementById('next-date').value,
+    location: document.getElementById('next-location').value.trim(),
+  };
+  if (!rally.name || !rally.date) { showToast('Introduce nombre y fecha', true); return; }
+  localStorage.setItem(NEXT_RALLY_KEY, JSON.stringify(rally));
+  document.getElementById('nextRallySaved').style.display = 'block';
+  setTimeout(() => document.getElementById('nextRallySaved').style.display = 'none', 3500);
+  showToast('✓ Próximo rally guardado');
+}
+
+function clearNextRally() {
+  localStorage.removeItem(NEXT_RALLY_KEY);
+  document.getElementById('next-name').value     = '';
+  document.getElementById('next-date').value     = '';
+  document.getElementById('next-location').value = '';
+  showToast('Próximo rally eliminado');
+}
+
+function loadNextRally() {
+  try {
+    const r = JSON.parse(localStorage.getItem(NEXT_RALLY_KEY) || 'null');
+    if (!r) return;
+    document.getElementById('next-name').value     = r.name     || '';
+    document.getElementById('next-date').value     = r.date     || '';
+    document.getElementById('next-location').value = r.location || '';
+    if (r.champ) document.getElementById('next-champ').value = r.champ;
+  } catch {}
+}
+
+/* ─── Init ─── */
 if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
   loadConfig();
   renderCacheList();
   buildManualTable();
   updateManDiscs();
+  loadNextRally();
 }
 </script>
 
