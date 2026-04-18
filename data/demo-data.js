@@ -30,15 +30,6 @@ const DEMO_DATA = {
     ]
   },
 
-  'wrc::asfalto::copilotos': {
-    rounds: ['Montecarlo','Suecia','Kenya','Chile','Rally1','Finlandia','Alemania','Gran Bretaña'],
-    rows: [
-      { pos:1, piloto:'M. Wydaeghe',  copiloto:'T. Neuville', equipo:'Hyundai WRT', vehiculo:'Hyundai i20N Rally1', pts:[25,0,25,18,25,18,15,25], total:151 },
-      { pos:2, piloto:'V. Landais',   copiloto:'S. Ogier',    equipo:'Toyota GAZOO', vehiculo:'GR Yaris Rally1',    pts:[18,25,15,25,0,25,25,15], total:148 },
-      { pos:3, piloto:'S. Martin',    copiloto:'E. Evans',    equipo:'Toyota GAZOO', vehiculo:'GR Yaris Rally1',    pts:[15,18,18,15,18,15,18,18], total:135 },
-    ]
-  },
-
   'wrc::asfalto::equipos': {
     rounds: ['Montecarlo','Suecia','Kenya','Chile','Rally1','Finlandia','Alemania','Gran Bretaña'],
     rows: [
@@ -61,15 +52,6 @@ const DEMO_DATA = {
     ]
   },
 
-  'cera::asfalto::copilotos': {
-    rounds: ['La Llana','Lorca','Llanes','RallyRACC','Islas Canarias','Pozoblanco'],
-    rows: [
-      { pos:1, piloto:'C. Carrera', copiloto:'D. Sordo',   equipo:'Hyundai WRT', vehiculo:'Hyundai i20N Rally1', pts:[25,25,18,25,25,18], total:136 },
-      { pos:2, piloto:'U. Conde',   copiloto:'J. Lamela',  equipo:'Rallye Team Sp', vehiculo:'GR Yaris Rally2', pts:[18,18,25,18,18,25], total:122 },
-      { pos:3, piloto:'Y. Mujica',  copiloto:'E. Cruz',    equipo:'Aterura', vehiculo:'Ford Fiesta Rally2', pts:[15,15,15,15,15,15], total:90 },
-    ]
-  },
-
   'cera::asfalto::equipos': {
     rounds: ['La Llana','Lorca','Llanes','RallyRACC','Islas Canarias','Pozoblanco'],
     rows: [
@@ -88,13 +70,6 @@ const DEMO_DATA = {
     ]
   },
 
-  'cera::montana::copilotos': {
-    rounds: ['Escúzar','Alhaurín','Copa Montaña','Guadix','La Guardia','Final'],
-    rows: [
-      { pos:1, piloto:'A. Ortega', copiloto:'—', equipo:'Speed Club', vehiculo:'BRC CM05', pts:[18,18,18,18,25,25], total:122 },
-    ]
-  },
-
   /* ════════════════════ CANARIAS ════════════════════ */
   'canarias::asfalto::pilotos': {
     rounds: ['RVdT','GC Historic','Sub.Tejeda','Sub.Arucas','Fuerteventura','Final'],
@@ -105,15 +80,6 @@ const DEMO_DATA = {
       { pos:4, piloto:'A. Benítez',   copiloto:'P. González',   equipo:'—',                 vehiculo:'Mitsubishi Evo VII', pts:[12,12,12,12,12,12], total:72  },
       { pos:5, piloto:'R. Curbelo',   copiloto:'M. Expósito',   equipo:'Lanzarote Rally',   vehiculo:'Citroën DS3',        pts:[10,10,10,10,10,10], total:60  },
       { pos:6, piloto:'T. Cabrera',   copiloto:'F. Castellano', equipo:'Racing Canarias',   vehiculo:'Peugeot 208 R2',     pts:[8,8,8,8,8,8],       total:48  },
-    ]
-  },
-
-  'canarias::asfalto::copilotos': {
-    rounds: ['RVdT','GC Historic','Sub.Tejeda','Sub.Arucas','Fuerteventura','Final'],
-    rows: [
-      { pos:1, piloto:'Y. Mujica',   copiloto:'E. Cruz',    equipo:'Escudería Aterura', vehiculo:'Ford Fiesta R2', pts:[25,25,25,25,25,25], total:150 },
-      { pos:2, piloto:'J.C. Déniz',  copiloto:'L. Monzón',  equipo:'—', vehiculo:'Skoda Fabia R2', pts:[18,18,18,18,18,18], total:108 },
-      { pos:3, piloto:'J. Páez',     copiloto:'J. Falcón',  equipo:'—', vehiculo:'Porsche GT3',   pts:[15,15,15,15,15,15], total:90  },
     ]
   },
 
@@ -136,13 +102,6 @@ const DEMO_DATA = {
     ]
   },
 
-  'canarias::montana::copilotos': {
-    rounds: ['Sub.Tejeda','Sub.Arucas','Sub.Gáldar','Sub.Moya','Inagua','Final'],
-    rows: [
-      { pos:1, piloto:'P. Bethencourt', copiloto:'—', equipo:'Tenerife Racing', vehiculo:'Norma M20F', pts:[18,18,18,25,18,18], total:115 },
-    ]
-  },
-
   'canarias::regularidad::pilotos': {
     rounds: ['Prueba 1','Prueba 2','Prueba 3','Prueba 4','Prueba 5','Final'],
     rows: [
@@ -152,13 +111,5 @@ const DEMO_DATA = {
       { pos:4, piloto:'J. Jiménez',   copiloto:'P. García',    equipo:'—',               vehiculo:'BMW 2002',        pts:[12,12,12,12,12,12], total:72  },
     ]
   },
-
-  'canarias::regularidad::navegantes': {
-    rounds: ['Prueba 1','Prueba 2','Prueba 3','Prueba 4','Prueba 5','Final'],
-    rows: [
-      { pos:1, piloto:'C. Llorente', copiloto:'A. Vega',    equipo:'Classic Cars GC',  vehiculo:'Porsche 911 SC', pts:[25,25,25,25,25,18], total:143 },
-      { pos:2, piloto:'M. Torres',   copiloto:'R. Suárez',  equipo:'Retro Motorsport', vehiculo:'Ford Escort RS', pts:[18,18,18,18,18,25], total:115 },
-    ]
-  }
 
 }; /* end DEMO_DATA */

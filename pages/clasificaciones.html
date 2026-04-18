@@ -113,18 +113,6 @@
   </button>
 </div>
 
-<!-- ═══ INFO BOX CUANDO NO HAY SHEET ═══ -->
-<div class="st-config-box" id="configBox" style="display:none;">
-  <h4>Cómo conectar datos reales</h4>
-  <p>Estás viendo datos de ejemplo. Para mostrar clasificaciones reales:</p>
-  <ul>
-    <li>Crea un <a href="https://sheets.google.com" target="_blank" rel="noopener">Google Sheet</a> con el formato indicado en <code>data/standings-config.js</code></li>
-    <li>Publícalo: <em>Archivo → Compartir → Publicar en la web</em></li>
-    <li>Copia el ID del Sheet y pégalo en <code>sheet_id</code> de la configuración</li>
-    <li>O usa el <a href="clasificaciones-admin.html">panel de administración</a> para gestionar los datos</li>
-  </ul>
-</div>
-
 <!-- ═══ TABLA ═══ -->
 <div class="st-container">
   <div id="tableContainer">
@@ -157,7 +145,6 @@
   const tableEl      = document.getElementById('tableContainer');
   const statusEl     = document.getElementById('statusBar');
   const refreshBtn   = document.getElementById('refreshBtn');
-  const configBox    = document.getElementById('configBox');
   const ttlLabel     = document.getElementById('ttl-label');
   const seasonLabel  = document.getElementById('season-label');
 
@@ -244,17 +231,11 @@
   async function loadTable(forceRefresh = false) {
     tableEl.innerHTML = '<div class="st-loading">Cargando…</div>';
     statusEl.innerHTML = '';
-    configBox.style.display = 'none';
 
     try {
       const dataset = await Clasificaciones.getData(activeChamp, activeDisc, activeCat, forceRefresh);
       Clasificaciones.renderTable(tableEl, dataset);
       Clasificaciones.renderStatus(statusEl, dataset, activeChamp);
-
-      /* Muestra el infobox si son datos de demo */
-      const hasSheet = !!STANDINGS_CONFIG.championships[activeChamp]?.sheet_id;
-      configBox.style.display = (!hasSheet || dataset?._demo) ? 'block' : 'none';
-
     } catch (err) {
       console.error('[Clasificaciones] Error cargando datos:', err);
       tableEl.innerHTML = '<p class="st-empty">Error cargando los datos. Por favor, inténtalo de nuevo.</p>';

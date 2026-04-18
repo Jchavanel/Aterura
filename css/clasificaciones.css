@@ -402,43 +402,6 @@
 }
 
 /* ══════════════════
-   CONFIG INFO BOX
-══════════════════ */
-.st-config-box {
-  background: rgba(20,88,200,0.07);
-  border: 1px solid rgba(20,88,200,0.2);
-  border-left: 3px solid var(--red);
-  padding: 16px 20px;
-  margin: 0 40px 24px;
-  max-width: calc(1280px - 80px);
-  margin-left: auto;
-  margin-right: auto;
-}
-.st-config-box h4 {
-  font-family: var(--font-condensed);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--red);
-  margin-bottom: 8px;
-}
-.st-config-box p, .st-config-box li {
-  font-size: 13px;
-  color: var(--light);
-  line-height: 1.6;
-}
-.st-config-box code {
-  font-family: monospace;
-  background: rgba(255,255,255,0.06);
-  padding: 2px 6px;
-  font-size: 12px;
-  color: var(--gold-light);
-}
-.st-config-box ul { margin: 8px 0 0 16px; }
-.st-config-box a { color: var(--gold-light); }
-
-/* ══════════════════
    RESPONSIVE
 ══════════════════ */
 @media (max-width: 960px) {

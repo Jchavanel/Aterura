@@ -338,7 +338,116 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
       </div>
     </div>
 
-    <!-- ── Sección 2: Actualización forzada ── -->
+    <!-- ── Sección 2: Guía completa de actualización ── -->
+    <div class="admin-section">
+      <h3>📋 Guía completa de actualización de clasificaciones</h3>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+        <div style="background:rgba(240,184,0,0.05);border:1px solid rgba(240,184,0,0.15);padding:20px;">
+          <h4 style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold-light);margin-bottom:14px;">Opción A — Google Sheets (recomendado)</h4>
+          <ol style="font-size:13px;color:var(--light);line-height:1.8;padding-left:18px;">
+            <li>Crea un Google Sheet en <a href="https://sheets.google.com" target="_blank" rel="noopener" style="color:var(--gold-light);">sheets.google.com</a></li>
+            <li>Crea una pestaña por cada tabla (ver nombres abajo)</li>
+            <li>Respeta la estructura de filas exacta</li>
+            <li>Ve a <em>Archivo → Compartir → Publicar en la web</em> → Publicar</li>
+            <li>Copia el ID de la URL del sheet y pégalo en "Configuración de Google Sheets" arriba</li>
+            <li>Guarda la configuración</li>
+            <li>La web se actualiza automáticamente cada <strong style="color:var(--white);">N días</strong> según el TTL configurado</li>
+          </ol>
+        </div>
+
+        <div style="background:rgba(20,88,200,0.05);border:1px solid rgba(20,88,200,0.15);padding:20px;">
+          <h4 style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--red);margin-bottom:14px;">Opción B — Entrada manual</h4>
+          <ol style="font-size:13px;color:var(--light);line-height:1.8;padding-left:18px;">
+            <li>Ve a la sección "Entrada manual de datos" más abajo</li>
+            <li>Selecciona campeonato, disciplina y categoría</li>
+            <li>Introduce los nombres de las pruebas separados por coma</li>
+            <li>Rellena los datos fila a fila</li>
+            <li>Pulsa <strong style="color:var(--white);">Guardar en caché</strong></li>
+            <li>Los datos aparecerán en la página de clasificaciones inmediatamente</li>
+            <li>Repite el proceso cada vez que quieras actualizar</li>
+          </ol>
+        </div>
+
+      </div>
+
+      <!-- Nombres de pestañas del sheet -->
+      <h4 style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Nombres exactos de pestañas del Google Sheet</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div style="background:var(--dark-4);padding:14px;">
+          <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🌍 WRC</p>
+          <p style="font-family:monospace;font-size:12px;color:var(--gold-light);line-height:1.9;">WRC-Asfalto-Pilotos<br>WRC-Asfalto-Equipos</p>
+        </div>
+        <div style="background:var(--dark-4);padding:14px;">
+          <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🇪🇸 CERA España</p>
+          <p style="font-family:monospace;font-size:12px;color:var(--gold-light);line-height:1.9;">CERA-Asfalto-Pilotos<br>CERA-Asfalto-Equipos<br>CERA-Montana-Pilotos</p>
+        </div>
+        <div style="background:var(--dark-4);padding:14px;">
+          <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🐉 Canarias</p>
+          <p style="font-family:monospace;font-size:12px;color:var(--gold-light);line-height:1.9;">CAN-Asfalto-Pilotos<br>CAN-Asfalto-Equipos<br>CAN-Montana-Pilotos<br>CAN-Regular-Pilotos</p>
+        </div>
+      </div>
+
+      <!-- Estructura exacta de filas -->
+      <h4 style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Estructura exacta de cada pestaña</h4>
+      <div style="background:var(--dark-2);border:1px solid rgba(138,170,200,0.08);padding:16px;overflow-x:auto;">
+        <table style="border-collapse:collapse;font-size:12px;font-family:monospace;white-space:nowrap;">
+          <tr style="background:rgba(240,184,0,0.08);">
+            <td style="padding:6px 12px;color:var(--gold-light);font-weight:700;border:1px solid rgba(138,170,200,0.1);">Fila 1<br><small style="color:var(--muted);">(cabeceras)</small></td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--light);">POS</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--light);">PILOTO</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--light);">COPILOTO</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--light);">EQUIPO</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--light);">VEHICULO</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">R1</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">R2</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">R3</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">…</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--gold-light);">TOTAL</td>
+          </tr>
+          <tr style="background:rgba(20,88,200,0.05);">
+            <td style="padding:6px 12px;color:var(--red);font-weight:700;border:1px solid rgba(138,170,200,0.1);">Fila 2<br><small style="color:var(--muted);">(pruebas)</small></td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">-</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">-</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">-</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">-</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">-</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">Montecarlo</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">Suecia</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">Kenya</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">…</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">-</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 12px;color:var(--muted);border:1px solid rgba(138,170,200,0.1);">Fila 3+<br><small style="color:var(--muted);">(datos)</small></td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">1</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">T.Neuville</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">M.Wydaeghe</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">Hyundai WRT</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">i20N Rally1</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">25</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">0</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--white);">25</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--muted);">…</td>
+            <td style="padding:6px 12px;border:1px solid rgba(138,170,200,0.1);color:var(--gold-light);">169</td>
+          </tr>
+        </table>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">
+        Deja la celda vacía o pon <code style="font-family:monospace;color:var(--gold-light);">DNS</code> si el piloto no participó en una prueba.
+        El total se puede calcular con la fórmula <code style="font-family:monospace;color:var(--gold-light);">=SUMA(F3:M3)</code> directamente en el sheet.
+        Para equipos, el campo COPILOTO se deja vacío o con guión.
+      </p>
+
+      <div style="margin-top:20px;">
+        <a href="clasificaciones-plantilla-sheet.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--font-condensed);font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-light);background:rgba(240,184,0,0.08);border:1px solid rgba(240,184,0,0.2);padding:10px 18px;text-decoration:none;transition:all 0.2s;">
+          📄 Ver / Descargar plantilla sheet completa →
+        </a>
+      </div>
+    </div>
+
+    <!-- ── Sección 3: Actualización forzada ── -->
     <div class="admin-section">
       <h3>🔄 Control de caché</h3>
       <p style="font-size:14px;color:var(--light);margin-bottom:16px;">
@@ -380,6 +489,7 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
           <label>Categoría</label>
           <select id="man-cat">
             <option value="pilotos">Pilotos</option>
+            <option value="equipos">Equipos</option>
           </select>
         </div>
         <div class="form-g">
@@ -407,7 +517,7 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
     </div>
 
-    <!-- ── Sección 4: Enlace a clasificaciones ── -->
+    <!-- ── Sección 5: Enlace a clasificaciones ── -->
     <div class="admin-section">
       <h3>🔗 Accesos rápidos</h3>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">

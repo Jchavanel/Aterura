@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Plantilla Google Sheets — Escudería Aterura</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+
+  <style>
+    .tmpl-wrap   { max-width: 1200px; margin: 0 auto; padding: 40px; }
+    .tmpl-header { margin-bottom: 40px; border-bottom: 2px solid var(--gold-light); padding-bottom: 24px; }
+    .tmpl-header h1 { font-family: var(--font-display); font-size: 42px; color: var(--white); margin-bottom: 8px; }
+    .tmpl-header p  { font-size: 15px; color: var(--light); line-height: 1.7; max-width: 680px; }
+
+    .tmpl-nav {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 40px;
+      position: sticky; top: 0; background: var(--dark); padding: 12px 0; z-index: 10;
+      border-bottom: 1px solid rgba(138,170,200,0.08);
+    }
+    .tmpl-nav a {
+      font-family: var(--font-condensed); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      padding: 6px 14px; border: 1px solid rgba(138,170,200,0.15);
+      transition: all 0.2s;
+    }
+    .tmpl-nav a:hover { color: var(--gold-light); border-color: rgba(240,184,0,0.3); }
+
+    .tmpl-section { margin-bottom: 56px; }
+    .tmpl-section-title {
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--font-display); font-size: 28px; color: var(--white);
+      margin-bottom: 8px;
+    }
+    .tmpl-section-icon { font-size: 24px; }
+    .tmpl-section-sub {
+      font-family: var(--font-condensed); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--gold-light); margin-bottom: 20px;
+    }
+
+    /* Tab de pestaña */
+    .sheet-tab {
+      margin-bottom: 28px;
+      border: 1px solid rgba(138,170,200,0.1);
+    }
+    .sheet-tab-label {
+      background: var(--dark-4); padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(138,170,200,0.08);
+    }
+    .sheet-tab-label span {
+      font-family: monospace; font-size: 13px; color: var(--gold-light); font-weight: 700;
+    }
+    .copy-btn {
+      font-family: var(--font-condensed); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      background: transparent; border: 1px solid rgba(240,184,0,0.3);
+      color: var(--gold-light); padding: 4px 12px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(240,184,0,0.1); }
+    .copy-btn.copied { color: #3CB371; border-color: #3CB371; }
+
+    /* Tabla del sheet */
+    .sheet-table-wrap { overflow-x: auto; }
+    table.sheet {
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: monospace;
+      min-width: 100%;
+    }
+    table.sheet thead tr:first-child th {
+      background: #1a2744;
+      color: rgba(138,170,200,0.6);
+      font-size: 10px;
+      font-family: var(--font-condensed);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      text-align: center;
+      border: 1px solid rgba(138,170,200,0.06);
+      width: 36px;
+    }
+
+    table.sheet tr.row-1 td { background: rgba(20,88,200,0.12); font-weight: 700; }
+    table.sheet tr.row-2 td { background: rgba(240,184,0,0.08); color: var(--gold-light); }
+    table.sheet tr.row-data:hover td { background: rgba(20,88,200,0.06); }
+
+    table.sheet td {
+      padding: 7px 10px;
+      border: 1px solid rgba(138,170,200,0.06);
+      color: var(--light);
+      white-space: nowrap;
+    }
+    table.sheet td.cell-col   { background: #0F1630; color: rgba(138,170,200,0.4); text-align: center; font-size: 10px; }
+    table.sheet td.cell-label { background: rgba(6,8,20,0.8); color: var(--muted); font-size: 10px; min-width: 80px; }
+    table.sheet td.cell-hdr   { background: rgba(20,88,200,0.18); color: var(--white); font-weight: 700; text-align: center; }
+    table.sheet td.cell-round { background: rgba(240,184,0,0.1); color: var(--gold-light); text-align: center; }
+    table.sheet td.cell-pt    { text-align: center; color: var(--white); }
+    table.sheet td.cell-total { background: rgba(240,184,0,0.08); color: var(--gold-light); font-weight: 700; text-align: center; }
+    table.sheet td.cell-dns   { color: var(--muted); text-align: center; }
+    table.sheet td.cell-eq    { color: var(--light); }
+    table.sheet td.cell-formula { color: #7EC8A0; font-style: italic; }
+
+    /* Leyenda de colores */
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--font-condensed); font-size: 11px;
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .legend-dot { width: 12px; height: 12px; flex-shrink: 0; }
+
+    /* Notas */
+    .note-box {
+      background: rgba(20,88,200,0.06);
+      border-left: 3px solid var(--red);
+      padding: 14px 18px;
+      margin-top: 16px;
+    }
+    .note-box h5 {
+      font-family: var(--font-condensed); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--red);
+      margin-bottom: 8px;
+    }
+    .note-box p, .note-box li {
+      font-size: 13px; color: var(--light); line-height: 1.7;
+    }
+    .note-box ul { padding-left: 16px; }
+    .note-box code { font-family: monospace; color: var(--gold-light); font-size: 12px; }
+
+    /* Botones footer */
+    .tmpl-footer {
+      border-top: 1px solid rgba(138,170,200,0.08);
+      padding-top: 28px;
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .btn-back {
+      font-family: var(--font-condensed); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      border: 1px solid rgba(138,170,200,0.2); padding: 10px 20px;
+      transition: all 0.2s;
+    }
+    .btn-back:hover { color: var(--white); border-color: rgba(138,170,200,0.4); }
+
+    @media (max-width: 768px) {
+      .tmpl-wrap { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="tmpl-wrap">
+
+  <div class="tmpl-header">
+    <h1>Plantilla Google Sheets</h1>
+    <p>
+      Copia las tablas de esta página directamente en Google Sheets.
+      Cada bloque corresponde a una pestaña del sheet. Los colores orientan sobre el tipo de celda pero no son obligatorios en el sheet real — solo los datos importan.
+    </p>
+    <p style="margin-top:10px;font-size:13px;color:var(--muted);">
+      <strong style="color:var(--gold-light);">Uso rápido:</strong>
+      Pulsa "Copiar datos" en cada tabla → abre Google Sheets → selecciona la celda A1 → Ctrl+V (o Cmd+V en Mac).
+    </p>
+  </div>
+
+  <!-- Navegación por sección -->
+  <div class="tmpl-nav">
+    <a href="#wrc">🌍 WRC</a>
+    <a href="#cera">🇪🇸 CERA España</a>
+    <a href="#canarias">🐉 Canarias Asfalto</a>
+    <a href="#canarias-montana">Canarias Montaña</a>
+    <a href="#canarias-regular">Canarias Regularidad</a>
+    <a href="clasificaciones-admin.html">← Volver al admin</a>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       LEYENDA
+  ═══════════════════════════════════ -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(20,88,200,0.4)"></div>Fila 1 — Cabeceras (no editar)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(240,184,0,0.4)"></div>Fila 2 — Nombre de pruebas (editar)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(235,242,252,0.15)"></div>Filas 3+ — Datos de pilotos/equipos</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(126,200,160,0.4)"></div>Fórmulas (opcional, calcular total)</div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       WRC
+  ═══════════════════════════════════ -->
+  <div class="tmpl-section" id="wrc">
+    <div class="tmpl-section-title"><span class="tmpl-section-icon">🌍</span> WRC — Mundial de Rallyes</div>
+    <div class="tmpl-section-sub">Un único Google Sheet · Dos pestañas</div>
+
+    <!-- WRC Pilotos -->
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: WRC-Asfalto-Pilotos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-wrc-pilotos', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-wrc-pilotos">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th><th>L</th><th>M</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">R6</td>
+              <td class="cell-hdr">R7</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">Montecarlo</td><td class="cell-round">Suecia</td><td class="cell-round">Kenya</td>
+              <td class="cell-round">Chile</td><td class="cell-round">Rally1</td><td class="cell-round">Finlandia</td>
+              <td class="cell-round">Gran Bretaña</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td>T. Neuville</td><td>M. Wydaeghe</td>
+              <td>Hyundai WRT</td><td>Hyundai i20N Rally1</td>
+              <td class="cell-pt">25</td><td class="cell-dns">0</td><td class="cell-pt">25</td>
+              <td class="cell-pt">18</td><td class="cell-pt">25</td><td class="cell-pt">18</td>
+              <td class="cell-pt">15</td><td class="cell-formula">=SUMA(F3:L3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td>S. Ogier</td><td>V. Landais</td>
+              <td>Toyota GAZOO Racing</td><td>GR Yaris Rally1</td>
+              <td class="cell-pt">18</td><td class="cell-pt">25</td><td class="cell-pt">15</td>
+              <td class="cell-pt">25</td><td class="cell-dns">0</td><td class="cell-pt">25</td>
+              <td class="cell-pt">25</td><td class="cell-formula">=SUMA(F4:L4)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 5</td>
+              <td class="cell-pt">3</td><td>E. Evans</td><td>S. Martin</td>
+              <td>Toyota GAZOO Racing</td><td>GR Yaris Rally1</td>
+              <td class="cell-pt">15</td><td class="cell-pt">18</td><td class="cell-pt">18</td>
+              <td class="cell-pt">15</td><td class="cell-pt">18</td><td class="cell-pt">15</td>
+              <td class="cell-pt">18</td><td class="cell-formula">=SUMA(F5:L5)</td>
+            </tr>
+            <tr class="row-data" style="opacity:0.5;">
+              <td class="cell-label">…</td>
+              <td colspan="13" style="color:var(--muted);font-size:11px;padding:6px 10px;">Añade más filas debajo siguiendo el mismo formato</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WRC Equipos -->
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: WRC-Asfalto-Equipos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-wrc-equipos', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-wrc-equipos">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th><th>L</th><th>M</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">R6</td>
+              <td class="cell-hdr">R7</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">Montecarlo</td><td class="cell-round">Suecia</td><td class="cell-round">Kenya</td>
+              <td class="cell-round">Chile</td><td class="cell-round">Rally1</td><td class="cell-round">Finlandia</td>
+              <td class="cell-round">Gran Bretaña</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td class="cell-eq">Toyota GAZOO Racing WRT</td><td>—</td>
+              <td>Toyota</td><td>GR Yaris Rally1</td>
+              <td class="cell-pt">48</td><td class="cell-pt">68</td><td class="cell-pt">48</td>
+              <td class="cell-pt">65</td><td class="cell-pt">43</td><td class="cell-pt">55</td>
+              <td class="cell-pt">56</td><td class="cell-formula">=SUMA(F3:L3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td class="cell-eq">Hyundai Shell Mobis WRT</td><td>—</td>
+              <td>Hyundai</td><td>i20N Rally1</td>
+              <td class="cell-pt">55</td><td class="cell-pt">25</td><td class="cell-pt">55</td>
+              <td class="cell-pt">48</td><td class="cell-pt">55</td><td class="cell-pt">48</td>
+              <td class="cell-pt">55</td><td class="cell-formula">=SUMA(F4:L4)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="note-box">
+      <h5>Notas WRC</h5>
+      <ul>
+        <li>En la pestaña de Equipos, la columna B contiene el nombre del equipo. Las columnas C (COPILOTO) y E (VEHICULO) se pueden dejar con <code>—</code>.</li>
+        <li>Añade o elimina columnas R1–R7 según el número de pruebas de la temporada. Actualiza también los nombres en la Fila 2.</li>
+        <li>Si un piloto no puntúa en una prueba escribe <code>0</code>. Si no participó deja la celda vacía.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       CERA
+  ═══════════════════════════════════ -->
+  <div class="tmpl-section" id="cera">
+    <div class="tmpl-section-title"><span class="tmpl-section-icon">🇪🇸</span> CERA — Campeonato de España</div>
+    <div class="tmpl-section-sub">Un único Google Sheet · Tres pestañas</div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CERA-Asfalto-Pilotos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-cera-asp', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-cera-asp">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">La Llana</td><td class="cell-round">Lorca</td><td class="cell-round">Llanes</td>
+              <td class="cell-round">RallyRACC</td><td class="cell-round">Pozoblanco</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td>D. Sordo</td><td>C. Carrera</td>
+              <td>Hyundai WRT</td><td>Hyundai i20N Rally1</td>
+              <td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-pt">18</td>
+              <td class="cell-pt">25</td><td class="cell-pt">18</td><td class="cell-formula">=SUMA(F3:J3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td>E. Cruz</td><td>Y. Mujica</td>
+              <td>Escudería Aterura</td><td>Ford Fiesta Rally2</td>
+              <td class="cell-pt">18</td><td class="cell-pt">18</td><td class="cell-pt">25</td>
+              <td class="cell-pt">18</td><td class="cell-pt">25</td><td class="cell-formula">=SUMA(F4:J4)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 5</td>
+              <td class="cell-pt">3</td><td>L. Monzón</td><td>J.C. Déniz</td>
+              <td>—</td><td>Skoda Fabia Rally2</td>
+              <td class="cell-pt">15</td><td class="cell-pt">15</td><td class="cell-pt">15</td>
+              <td class="cell-pt">15</td><td class="cell-pt">15</td><td class="cell-formula">=SUMA(F5:J5)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CERA-Asfalto-Equipos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-cera-eq', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-cera-eq">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">La Llana</td><td class="cell-round">Lorca</td><td class="cell-round">Llanes</td>
+              <td class="cell-round">RallyRACC</td><td class="cell-round">Pozoblanco</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td class="cell-eq">Hyundai WRT Spain</td><td>—</td>
+              <td>Hyundai</td><td>—</td>
+              <td class="cell-pt">50</td><td class="cell-pt">50</td><td class="cell-pt">45</td>
+              <td class="cell-pt">50</td><td class="cell-pt">45</td><td class="cell-formula">=SUMA(F3:J3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td class="cell-eq">Rallye Team Spain</td><td>—</td>
+              <td>Toyota</td><td>—</td>
+              <td class="cell-pt">35</td><td class="cell-pt">35</td><td class="cell-pt">40</td>
+              <td class="cell-pt">35</td><td class="cell-pt">40</td><td class="cell-formula">=SUMA(F4:J4)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CERA-Montana-Pilotos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-cera-mont', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-cera-mont">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td><td class="cell-hdr">R4</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>—</td><td>-</td><td>-</td>
+              <td class="cell-round">Escúzar</td><td class="cell-round">Alhaurín</td><td class="cell-round">Guadix</td><td class="cell-round">La Guardia</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td>J.M. López</td><td>—</td>
+              <td>Racing Sport</td><td>Norma M20F</td>
+              <td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-pt">18</td><td class="cell-formula">=SUMA(F3:I3)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       CANARIAS ASFALTO
+  ═══════════════════════════════════ -->
+  <div class="tmpl-section" id="canarias">
+    <div class="tmpl-section-title"><span class="tmpl-section-icon">🐉</span> Campeonato Canarias — Asfalto</div>
+    <div class="tmpl-section-sub">Un único Google Sheet para todo Canarias · Cuatro pestañas</div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CAN-Asfalto-Pilotos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-can-asp', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-can-asp">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">RVdT</td><td class="cell-round">GC Historic</td><td class="cell-round">Sub.Tejeda</td>
+              <td class="cell-round">Sub.Arucas</td><td class="cell-round">Fuerteventura</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td>E. Cruz</td><td>Y. Mujica</td>
+              <td>Escudería Aterura</td><td>Ford Fiesta Rally2</td>
+              <td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-pt">25</td>
+              <td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-formula">=SUMA(F3:J3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td>L. Monzón</td><td>J.C. Déniz</td>
+              <td>—</td><td>Skoda Fabia R2</td>
+              <td class="cell-pt">18</td><td class="cell-pt">18</td><td class="cell-pt">18</td>
+              <td class="cell-pt">18</td><td class="cell-pt">18</td><td class="cell-formula">=SUMA(F4:J4)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 5</td>
+              <td class="cell-pt">3</td><td>J. Falcón</td><td>J. Páez</td>
+              <td>—</td><td>Porsche GT3</td>
+              <td class="cell-pt">15</td><td class="cell-pt">15</td><td class="cell-pt">15</td>
+              <td class="cell-pt">15</td><td class="cell-pt">15</td><td class="cell-formula">=SUMA(F5:J5)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CAN-Asfalto-Equipos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-can-eq', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-can-eq">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">RVdT</td><td class="cell-round">GC Historic</td><td class="cell-round">Sub.Tejeda</td>
+              <td class="cell-round">Sub.Arucas</td><td class="cell-round">Fuerteventura</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td class="cell-eq">Escudería Aterura</td><td>—</td>
+              <td>Aterura</td><td>—</td>
+              <td class="cell-pt">50</td><td class="cell-pt">50</td><td class="cell-pt">50</td>
+              <td class="cell-pt">50</td><td class="cell-pt">50</td><td class="cell-formula">=SUMA(F3:J3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td class="cell-eq">Racing Canarias</td><td>—</td>
+              <td>Various</td><td>—</td>
+              <td class="cell-pt">35</td><td class="cell-pt">35</td><td class="cell-pt">35</td>
+              <td class="cell-pt">35</td><td class="cell-pt">35</td><td class="cell-formula">=SUMA(F4:J4)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       CANARIAS MONTAÑA + REGULARIDAD
+  ═══════════════════════════════════ -->
+  <div class="tmpl-section" id="canarias-montana">
+    <div class="tmpl-section-title">🐉 Canarias — Montaña</div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CAN-Montana-Pilotos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-can-mont', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-can-mont">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">R5</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>—</td><td>-</td><td>-</td>
+              <td class="cell-round">Sub.Tejeda</td><td class="cell-round">Sub.Arucas</td><td class="cell-round">Sub.Gáldar</td>
+              <td class="cell-round">Sub.Moya</td><td class="cell-round">Inagua</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td>M. Santana</td><td>—</td>
+              <td>GC Motor Sport</td><td>BRC CM05</td>
+              <td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-pt">25</td>
+              <td class="cell-pt">18</td><td class="cell-pt">25</td><td class="cell-formula">=SUMA(F3:J3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td>P. Bethencourt</td><td>—</td>
+              <td>Tenerife Racing</td><td>Norma M20F</td>
+              <td class="cell-pt">18</td><td class="cell-pt">18</td><td class="cell-pt">18</td>
+              <td class="cell-pt">25</td><td class="cell-pt">18</td><td class="cell-formula">=SUMA(F4:J4)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="tmpl-section" id="canarias-regular">
+    <div class="tmpl-section-title">🐉 Canarias — Regularidad</div>
+
+    <div class="sheet-tab">
+      <div class="sheet-tab-label">
+        <span>Pestaña: CAN-Regular-Pilotos</span>
+        <button class="copy-btn" onclick="copyTable('tbl-can-reg', this)">Copiar datos</button>
+      </div>
+      <div class="sheet-table-wrap">
+        <table class="sheet" id="tbl-can-reg">
+          <thead>
+            <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-1">
+              <td class="cell-label">Fila 1</td>
+              <td class="cell-hdr">POS</td><td class="cell-hdr">PILOTO</td><td class="cell-hdr">COPILOTO</td>
+              <td class="cell-hdr">EQUIPO</td><td class="cell-hdr">VEHICULO</td>
+              <td class="cell-hdr">R1</td><td class="cell-hdr">R2</td><td class="cell-hdr">R3</td>
+              <td class="cell-hdr">R4</td><td class="cell-hdr">TOTAL</td>
+            </tr>
+            <tr class="row-2">
+              <td class="cell-label">Fila 2</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              <td class="cell-round">Prueba 1</td><td class="cell-round">Prueba 2</td>
+              <td class="cell-round">Prueba 3</td><td class="cell-round">Prueba 4</td><td>-</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 3</td>
+              <td class="cell-pt">1</td><td>A. Vega</td><td>C. Llorente</td>
+              <td>Classic Cars GC</td><td>Porsche 911 SC</td>
+              <td class="cell-pt">25</td><td class="cell-pt">25</td><td class="cell-pt">25</td>
+              <td class="cell-pt">25</td><td class="cell-formula">=SUMA(F3:I3)</td>
+            </tr>
+            <tr class="row-data">
+              <td class="cell-label">Fila 4</td>
+              <td class="cell-pt">2</td><td>R. Suárez</td><td>M. Torres</td>
+              <td>Retro Motorsport</td><td>Ford Escort RS</td>
+              <td class="cell-pt">18</td><td class="cell-pt">18</td><td class="cell-pt">18</td>
+              <td class="cell-pt">18</td><td class="cell-formula">=SUMA(F4:I4)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <h5>Notas Regularidad</h5>
+      <ul>
+        <li>En la disciplina de Regularidad el campo COPILOTO puede contener al navegante.</li>
+        <li>En Montaña, si el piloto compite solo deja COPILOTO con <code>—</code>.</li>
+        <li>Los nombres de pruebas en Fila 2 se muestran como cabeceras en la tabla de la web. Usa nombres cortos (máx. 12 caracteres) para que quepan bien en móvil.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tmpl-footer">
+    <a href="clasificaciones-admin.html" class="btn-back">← Volver al panel de administración</a>
+    <a href="clasificaciones.html" class="btn-back">Ver clasificaciones →</a>
+  </div>
+
+</div>
+
+<script>
+function copyTable(tableId, btn) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  /* Genera TSV (tab-separated) para pegar en Google Sheets,
+     excluyendo la columna de etiquetas (primera columna) y
+     la fila de cabeceras de columna (A,B,C…) */
+  const rows = [];
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td')).slice(1); /* salta col etiqueta */
+    const row = cells.map(td => td.textContent.trim()).join('\t');
+    rows.push(row);
+  });
+
+  const tsv = rows.join('\n');
+  navigator.clipboard.writeText(tsv).then(() => {
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar datos'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    /* Fallback para navegadores sin clipboard API */
+    const ta = document.createElement('textarea');
+    ta.value = tsv;
+    ta.style.position = 'fixed';
+    ta.style.opacity  = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar datos'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
