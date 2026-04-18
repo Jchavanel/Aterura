@@ -105,12 +105,21 @@
 <!-- ═══ CATEGORÍAS ═══ -->
 <div class="st-categories" id="catTabs" role="tablist" aria-label="Categorías"></div>
 
-<!-- ═══ ESTADO + BOTÓN REFRESH ═══ -->
+<!-- ═══ ESTADO + BOTÓN REFRESH + ACCESO ADMIN ═══ -->
 <div class="st-statusbar">
   <div id="statusBar"></div>
-  <button class="st-refresh-btn" id="refreshBtn" aria-label="Forzar actualización">
-    <span class="st-refresh-icon">↻</span> Actualizar ahora
-  </button>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="st-refresh-btn" id="refreshBtn" aria-label="Forzar actualización">
+      <span class="st-refresh-icon">↻</span> Actualizar ahora
+    </button>
+    <a href="clasificaciones-admin.html"
+       class="st-refresh-btn"
+       aria-label="Panel de administración"
+       title="Gestionar clasificaciones"
+       style="text-decoration:none;">
+      ⚙
+    </a>
+  </div>
 </div>
 
 <!-- ═══ TABLA ═══ -->

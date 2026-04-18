@@ -224,20 +224,17 @@ const Clasificaciones = (() => {
     if (!el || !dataset) return;
     const champ    = STANDINGS_CONFIG.championships[champKey];
     const days     = champ?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
-    const isDemo   = dataset._demo;
     const ts       = dataset._ts;
     const expires  = dataset._expires;
     const fmtDate  = t => t ? new Date(t).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
     const diff     = expires ? Math.ceil((expires - Date.now()) / 864e5) : days;
 
-    el.innerHTML = isDemo
-      ? `<span class="st-status-demo">⚠ Datos de ejemplo — conecta Google Sheets para datos reales</span>`
-      : `<span class="st-status-ok">
-           <span class="st-status-dot"></span>
-           Actualizado: <strong>${fmtDate(ts)}</strong>
-           &nbsp;·&nbsp;
-           Próxima actualización en <strong>${Math.max(0, diff)} día${diff !== 1 ? 's' : ''}</strong>
-         </span>`;
+    el.innerHTML = `<span class="st-status-ok">
+        <span class="st-status-dot"></span>
+        Actualizado: <strong>${fmtDate(ts)}</strong>
+        &nbsp;·&nbsp;
+        Próxima actualización en <strong>${Math.max(0, diff)} día${diff !== 1 ? 's' : ''}</strong>
+      </span>`;
   }
 
   /* ══════════════════════════════════════
