@@ -2,15 +2,21 @@
    ESCUDERÍA ATERURA — js/clasificaciones.js
    ─────────────────────────────────────────────────────────
    Motor del sistema de clasificaciones.
-   Depende de: data/standings-config.js + data/demo-data.js
-   (cargados antes en el HTML)
+   Fuentes de datos (prioridad):
+   1. localStorage — caché rápida local (TTL configurable)
+   2. JSONBin.io   — fuente de verdad compartida entre dispositivos
+   3. Google Sheets — fuente alternativa (si está configurado)
+   4. Demo data    — fallback de ejemplo
+
+   Depende de: data/standings-config.js + data/sync-config.js
+               + data/demo-data.js
 ═══════════════════════════════════════════════════════════ */
 
 const Clasificaciones = (() => {
   'use strict';
 
   /* ══════════════════════════════════════
-     CACHÉ — localStorage con TTL
+     CACHÉ localStorage con TTL
   ══════════════════════════════════════ */
   const Cache = {
     PREFIX: 'aterura_standings_',
@@ -24,7 +30,7 @@ const Clasificaciones = (() => {
       try {
         localStorage.setItem(this.PREFIX + key, JSON.stringify(entry));
       } catch (e) {
-        console.warn('[Clasificaciones] localStorage lleno o bloqueado:', e);
+        console.warn('[Clasificaciones] localStorage lleno:', e);
       }
     },
 
@@ -37,10 +43,8 @@ const Clasificaciones = (() => {
           localStorage.removeItem(this.PREFIX + key);
           return null;
         }
-        return entry;  /* { data, ts, expires } */
-      } catch {
-        return null;
-      }
+        return entry;
+      } catch { return null; }
     },
 
     clear(key) {
@@ -57,6 +61,104 @@ const Clasificaciones = (() => {
   };
 
   /* ══════════════════════════════════════
+     JSONBIN — fuente de verdad remota
+  ══════════════════════════════════════ */
+  const Sync = {
+    REMOTE_TS_KEY: 'aterura_remote_ts',
+
+    /** ¿Cuándo fue la última lectura remota? */
+    lastFetchAge() {
+      const ts = parseInt(localStorage.getItem(this.REMOTE_TS_KEY) || '0');
+      return Date.now() - ts; /* ms desde la última lectura */
+    },
+
+    /** Marca timestamp de la última lectura remota */
+    markFetch() {
+      localStorage.setItem(this.REMOTE_TS_KEY, String(Date.now()));
+    },
+
+    /** Lee el bin completo de JSONBin (lectura pública, sin API key) */
+    async readAll() {
+      const binId = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+      if (!binId) return null;
+
+      const url = `${SYNC_CONFIG.api_url}/${binId}/latest`;
+      const res = await fetch(url, {
+        headers: { 'X-JSON-Privacy': 'false' }
+      });
+      if (!res.ok) throw new Error(`JSONBin HTTP ${res.status}`);
+      const json = await res.json();
+      return json.record || null; /* { "key::disc::cat": {rounds,rows}, ... } */
+    },
+
+    /** Escribe el bin completo (requiere API key — solo desde admin) */
+    async writeAll(apiKey, data) {
+      const binId = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+      if (!binId || !apiKey) throw new Error('Falta bin_id o API key');
+
+      const url = `${SYNC_CONFIG.api_url}/${binId}`;
+      const res = await fetch(url, {
+        method:  'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': apiKey,
+          'X-Bin-Versioning': 'false',
+        },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error(`JSONBin write HTTP ${res.status}`);
+      return await res.json();
+    },
+
+    /** Crea un nuevo bin (solo en el setup inicial del admin) */
+    async createBin(apiKey) {
+      const res = await fetch(`${SYNC_CONFIG.api_url}`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'X-Master-Key':  apiKey,
+          'X-Bin-Name':    'aterura-clasificaciones',
+          'X-Bin-Private': 'false',
+        },
+        body: JSON.stringify({ _info: 'Escudería Aterura — Clasificaciones' }),
+      });
+      if (!res.ok) throw new Error(`JSONBin create HTTP ${res.status}`);
+      const json = await res.json();
+      return json.metadata?.id || null;
+    },
+
+    /**
+     * Sincroniza el localStorage con el bin remoto.
+     * Descarga todos los datasets del bin y los guarda en caché local.
+     * Solo ejecuta si han pasado más de remote_ttl_minutes desde la última sync.
+     */
+    async syncToLocal(force = false) {
+      const ttlMs = ((typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60) * 60000;
+      if (!force && this.lastFetchAge() < ttlMs) return false; /* Demasiado reciente */
+
+      const remote = await this.readAll();
+      if (!remote) return false;
+
+      const days = (typeof STANDINGS_CONFIG !== 'undefined')
+        ? STANDINGS_CONFIG.default_cache_days
+        : 3;
+
+      let count = 0;
+      Object.entries(remote).forEach(([key, dataset]) => {
+        if (key.startsWith('_')) return; /* Ignora metadatos */
+        if (dataset?.rows?.length) {
+          Cache.set(key, dataset, days);
+          count++;
+        }
+      });
+
+      this.markFetch();
+      console.info(`[Sync] ${count} clasificaciones sincronizadas desde JSONBin`);
+      return count > 0;
+    }
+  };
+
+  /* ══════════════════════════════════════
      FETCH GOOGLE SHEETS (CSV público)
   ══════════════════════════════════════ */
   async function fetchSheet(sheetId, tabName) {
@@ -66,7 +168,6 @@ const Clasificaciones = (() => {
     return parseCSV(await res.text());
   }
 
-  /* Parsea el CSV respetando celdas con comas entre comillas */
   function parseCSV(text) {
     const lines = text.trim().split('\n');
     return lines.map(line => {
@@ -83,16 +184,12 @@ const Clasificaciones = (() => {
     });
   }
 
-  /* Convierte filas CSV al formato interno del motor
-     Fila 0: cabeceras (POS, PILOTO, COPILOTO, EQUIPO, VEHICULO, R1, R2, ..., TOTAL)
-     Fila 1: nombres de pruebas (los 5 primeros cols se ignoran)
-     Filas 2+: datos                                                         */
   function csvToDataset(rows) {
     if (!rows || rows.length < 3) return null;
     const headers  = rows[0].map(h => h.toUpperCase());
     const roundRow = rows[1];
-    const fixedCols = 5; /* POS, PILOTO, COPILOTO, EQUIPO, VEHICULO */
-    const roundCount = headers.length - fixedCols - 1; /* -1 = TOTAL */
+    const fixedCols = 5;
+    const roundCount = headers.length - fixedCols - 1;
 
     const rounds = [];
     for (let i = fixedCols; i < fixedCols + roundCount; i++) {
@@ -113,7 +210,8 @@ const Clasificaciones = (() => {
   }
 
   /* ══════════════════════════════════════
-     OBTENER DATOS (cache → sheets → demo)
+     OBTENER DATOS
+     Prioridad: caché local → JSONBin → Sheets → demo
   ══════════════════════════════════════ */
   async function getData(champKey, discKey, catKey, forceRefresh = false) {
     const key   = `${champKey}::${discKey}::${catKey}`;
@@ -121,13 +219,24 @@ const Clasificaciones = (() => {
     const cat   = champ?.disciplines?.[discKey]?.categories?.[catKey];
     const days  = champ?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
 
-    /* 1. Caché válida */
+    /* 1. Caché local válida (y no forzamos refresco) */
     if (!forceRefresh) {
       const cached = Cache.get(key);
       if (cached) return { ...cached.data, _fromCache: true, _ts: cached.ts, _expires: cached.expires };
     }
 
-    /* 2. Google Sheets */
+    /* 2. JSONBin — sincroniza TODO el bin a local y reintenta la caché */
+    if (typeof SYNC_CONFIG !== 'undefined' && SYNC_CONFIG.bin_id) {
+      try {
+        await Sync.syncToLocal(forceRefresh);
+        const cached = Cache.get(key);
+        if (cached) return { ...cached.data, _fromCache: false, _ts: cached.ts, _expires: cached.expires };
+      } catch (err) {
+        console.warn('[Clasificaciones] JSONBin sync error:', err);
+      }
+    }
+
+    /* 3. Google Sheets */
     if (champ?.sheet_id && cat?.sheet_tab) {
       try {
         const csv     = await fetchSheet(champ.sheet_id, cat.sheet_tab);
@@ -137,11 +246,11 @@ const Clasificaciones = (() => {
           return { ...dataset, _fromCache: false, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
         }
       } catch (err) {
-        console.warn(`[Clasificaciones] Sheets error para ${key}:`, err);
+        console.warn(`[Clasificaciones] Sheets error ${key}:`, err);
       }
     }
 
-    /* 3. Demo data */
+    /* 4. Demo data */
     const demo = DEMO_DATA[key];
     if (demo) return { ...demo, _fromCache: false, _demo: true, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
 
@@ -158,40 +267,27 @@ const Clasificaciones = (() => {
     }
 
     const { rounds, rows } = dataset;
-    const maxRounds = rounds.length;
 
-    let html = `
-      <div class="st-table-wrap">
-        <table class="st-table" role="grid">
-          <thead>
-            <tr>
-              <th class="st-th-pos"  scope="col">Pos</th>
-              <th class="st-th-name" scope="col">Piloto / Equipo</th>
-              <th class="st-th-veh"  scope="col">Vehículo</th>`;
+    let html = `<div class="st-table-wrap"><table class="st-table" role="grid">
+      <thead>
+        <tr>
+          <th class="st-th-pos"  scope="col">Pos</th>
+          <th class="st-th-name" scope="col">Piloto / Equipo</th>
+          <th class="st-th-veh"  scope="col">Vehículo</th>`;
 
-    rounds.forEach((r, i) => {
-      html += `<th class="st-th-round" scope="col" title="${r}">R${i + 1}</th>`;
-    });
-
-    html += `      <th class="st-th-total" scope="col">Total</th>
-            </tr>
-            <tr class="st-rounds-row">
-              <td></td><td></td><td></td>`;
-    rounds.forEach(r => {
-      html += `<td class="st-round-name" title="${r}">${r}</td>`;
-    });
-    html += `  <td></td></tr>
-          </thead>
-          <tbody>`;
+    rounds.forEach((_, i) => { html += `<th class="st-th-round" scope="col">R${i+1}</th>`; });
+    html += `<th class="st-th-total" scope="col">Total</th></tr>
+        <tr class="st-rounds-row"><td></td><td></td><td></td>`;
+    rounds.forEach(r => { html += `<td class="st-round-name" title="${r}">${r}</td>`; });
+    html += `<td></td></tr>
+      </thead><tbody>`;
 
     rows.forEach((row, idx) => {
       const podium = idx < 3 ? `st-row-p${idx + 1}` : '';
-      const leader = idx === 0;
-
       html += `<tr class="st-row ${podium}" role="row">
         <td class="st-pos" role="gridcell">
           <span class="st-pos-num">${row.pos}</span>
-          ${leader ? '<span class="st-leader-dot" aria-label="Líder"></span>' : ''}
+          ${idx === 0 ? '<span class="st-leader-dot" aria-label="Líder"></span>' : ''}
         </td>
         <td class="st-name" role="gridcell">
           <span class="st-piloto">${row.piloto}</span>
@@ -209,8 +305,7 @@ const Clasificaciones = (() => {
                      role="gridcell">${isNull ? 'DNS' : p}</td>`;
       });
 
-      html += `<td class="st-total" role="gridcell"><strong>${row.total}</strong></td>
-      </tr>`;
+      html += `<td class="st-total" role="gridcell"><strong>${row.total}</strong></td></tr>`;
     });
 
     html += `</tbody></table></div>`;
@@ -218,7 +313,7 @@ const Clasificaciones = (() => {
   }
 
   /* ══════════════════════════════════════
-     STATUS BAR — última actualización
+     STATUS BAR
   ══════════════════════════════════════ */
   function renderStatus(el, dataset, champKey) {
     if (!el || !dataset) return;
@@ -233,13 +328,13 @@ const Clasificaciones = (() => {
         <span class="st-status-dot"></span>
         Actualizado: <strong>${fmtDate(ts)}</strong>
         &nbsp;·&nbsp;
-        Próxima actualización en <strong>${Math.max(0, diff)} día${diff !== 1 ? 's' : ''}</strong>
+        Próxima sync en <strong>${Math.max(0, diff)} día${diff !== 1 ? 's' : ''}</strong>
       </span>`;
   }
 
   /* ══════════════════════════════════════
      API PÚBLICA
   ══════════════════════════════════════ */
-  return { getData, renderTable, renderStatus, Cache };
+  return { getData, renderTable, renderStatus, Cache, Sync };
 
 })();

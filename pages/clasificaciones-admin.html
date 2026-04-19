@@ -338,7 +338,58 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
       </div>
     </div>
 
-    <!-- ── Sección 2: Guía completa de actualización ── -->
+    <!-- ── Sección 2: Sincronización cross-dispositivo (JSONBin) ── -->
+    <div class="admin-section" id="syncSection">
+      <h3>🔄 Sincronización entre dispositivos</h3>
+
+      <!-- Estado actual -->
+      <div id="syncStatus" style="margin-bottom:20px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+        <span id="syncDot" style="width:10px;height:10px;border-radius:50%;background:var(--mid);flex-shrink:0;"></span>
+        <span id="syncMsg" style="font-family:var(--font-condensed);font-size:13px;letter-spacing:0.08em;color:var(--muted);">Cargando estado de sincronización…</span>
+      </div>
+
+      <div class="config-grid">
+        <div class="form-g">
+          <label>API Key (Master Key de JSONBin) <span style="color:var(--red)">— privada, no subir al repo</span></label>
+          <input type="password" id="sync-apikey" placeholder="$2a$10$..." autocomplete="off">
+          <span class="hint">
+            Obtén tu Master Key en <a href="https://jsonbin.io/app/apikeys" target="_blank" rel="noopener" style="color:var(--gold-light);">jsonbin.io/app/apikeys</a>
+            (registro gratuito, no requiere tarjeta)
+          </span>
+        </div>
+        <div class="form-g">
+          <label>Bin ID <span style="color:var(--muted)">— público, se sube al repo en sync-config.js</span></label>
+          <input type="text" id="sync-binid" placeholder="64a3f2e1…" readonly style="opacity:0.7;cursor:default;">
+          <span class="hint">Se genera automáticamente al crear el bin. Cópialo en <code style="color:var(--gold-light);">data/sync-config.js</code></span>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn-admin btn-save"  onclick="syncSetup()">🚀 Crear bin y activar sincronización</button>
+        <button class="btn-admin btn-gold"  onclick="syncNow()">↻ Forzar sincronización ahora</button>
+        <button class="btn-admin btn-ghost" onclick="saveSyncKey()">💾 Guardar API Key</button>
+      </div>
+
+      <!-- Caja de instrucciones post-setup -->
+      <div id="syncSetupBox" style="display:none;margin-top:20px;background:rgba(60,179,113,0.07);border:1px solid rgba(60,179,113,0.2);border-left:3px solid #3CB371;padding:16px 20px;">
+        <h4 style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#3CB371;margin-bottom:12px;">✓ Bin creado — Último paso</h4>
+        <p style="font-size:13px;color:var(--light);line-height:1.7;margin-bottom:12px;">
+          Copia el Bin ID de arriba y pégalo en <code style="color:var(--gold-light);">data/sync-config.js</code> en la línea <code style="color:var(--gold-light);">bin_id: ''</code>, luego haz commit y push al repositorio.
+        </p>
+        <div style="background:var(--dark-2);padding:12px 16px;font-family:monospace;font-size:13px;color:var(--gold-light);overflow-x:auto;" id="syncConfigPreview"></div>
+        <button class="btn-admin btn-ghost" style="margin-top:12px;" onclick="copySyncConfig()">Copiar contenido de sync-config.js</button>
+      </div>
+
+      <div style="margin-top:20px;padding:14px;background:rgba(20,88,200,0.05);border:1px solid rgba(20,88,200,0.12);">
+        <p style="font-size:13px;color:var(--light);line-height:1.7;">
+          <strong style="color:var(--white);">Cómo funciona:</strong>
+          Al guardar una clasificación se escribe simultáneamente en tu navegador (acceso instantáneo) y en JSONBin (acceso desde cualquier dispositivo).
+          Otros dispositivos sincronizan automáticamente al abrir la página de clasificaciones, con un mínimo de 60 minutos entre lecturas remotas para no agotar el plan gratuito (10.000 peticiones/mes).
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Sección 3: Guía completa de actualización ── -->
     <div class="admin-section">
       <h3>📋 Guía completa de actualización de clasificaciones</h3>
 
@@ -577,6 +628,7 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
 
 <!-- Scripts -->
 <script src="../data/standings-config.js"></script>
+<script src="../data/sync-config.js"></script>
 <script src="../data/demo-data.js"></script>
 <script src="../js/clasificaciones.js"></script>
 <script src="../js/nav.js"></script>
@@ -593,8 +645,9 @@ function checkPin() {
     document.getElementById('pinScreen').style.display  = 'none';
     document.getElementById('adminPanel').classList.add('visible');
     loadConfig();
+    renderSyncStatus();
     renderCacheList();
-    updateManDiscs();   /* Carga también los datos guardados del primer combo */
+    updateManDiscs();
     loadNextRally();
   } else {
     const err = document.getElementById('pinError');
@@ -628,8 +681,150 @@ function showToast(msg, isError = false) {
 }
 
 /* ─── CONFIG ─── */
-const CFG_LS_KEY = 'aterura_admin_config';
+const CFG_LS_KEY    = 'aterura_admin_config';
+const SYNC_KEY_LS   = 'aterura_sync_apikey';
+const SYNC_BINID_LS = 'aterura_sync_binid';
 
+/* ─── SYNC HELPERS ─── */
+function getSyncKey()   { return localStorage.getItem(SYNC_KEY_LS) || ''; }
+function getSyncBinId() {
+  return document.getElementById('sync-binid')?.value.trim()
+    || localStorage.getItem(SYNC_BINID_LS)
+    || (typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.bin_id : '')
+    || '';
+}
+
+function saveSyncKey() {
+  const key = document.getElementById('sync-apikey')?.value.trim();
+  if (!key || key.startsWith('•')) { showToast('Introduce tu API Key primero', true); return; }
+  localStorage.setItem(SYNC_KEY_LS, key);
+  renderSyncStatus();
+  showToast('✓ API Key guardada en este navegador');
+}
+
+async function syncSetup() {
+  const apiKey = (document.getElementById('sync-apikey')?.value.trim().startsWith('•')
+    ? getSyncKey()
+    : document.getElementById('sync-apikey')?.value.trim()) || getSyncKey();
+  if (!apiKey) { showToast('Introduce tu Master Key de JSONBin primero', true); return; }
+
+  const btn = document.querySelector('[onclick="syncSetup()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creando bin…'; }
+
+  try {
+    let binId = getSyncBinId();
+    if (!binId) {
+      binId = await Clasificaciones.Sync.createBin(apiKey);
+      if (!binId) throw new Error('No se recibió bin ID');
+    }
+    localStorage.setItem(SYNC_KEY_LS, apiKey);
+    localStorage.setItem(SYNC_BINID_LS, binId);
+    document.getElementById('sync-binid').value = binId;
+    if (typeof SYNC_CONFIG !== 'undefined') SYNC_CONFIG.bin_id = binId;
+    renderSyncStatus();
+    showSyncSetupBox(binId);
+    showToast('✓ Bin activado. Copia el ID en sync-config.js y sube al repo.');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Crear bin y activar sincronización'; }
+  }
+}
+
+async function syncNow() {
+  const binId = getSyncBinId();
+  if (!binId) { showToast('Configura primero el Bin ID', true); return; }
+  const btn = document.querySelector('[onclick="syncNow()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  try {
+    const ok = await Clasificaciones.Sync.syncToLocal(true);
+    renderSyncStatus(); renderCacheList();
+    showToast(ok ? '✓ Sincronización completada' : 'Sin datos remotos aún');
+  } catch (err) {
+    showToast('Error de sync: ' + err.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Forzar sincronización ahora'; }
+  }
+}
+
+function renderSyncStatus() {
+  const dot = document.getElementById('syncDot');
+  const msg = document.getElementById('syncMsg');
+  if (!dot || !msg) return;
+  const binId  = getSyncBinId();
+  const apiKey = getSyncKey();
+  if (binId && apiKey) {
+    dot.style.background = '#3CB371';
+    msg.innerHTML = `Sincronización <strong style="color:#3CB371">activa</strong> · Bin: <code style="font-family:monospace;color:var(--gold-light)">${binId.substring(0,10)}…</code> · API Key guardada`;
+  } else if (binId) {
+    dot.style.background = 'var(--gold-light)';
+    msg.innerHTML = `Bin configurado · <strong style="color:var(--gold-light)">Falta la API Key</strong> para escribir datos`;
+  } else {
+    dot.style.background = '#E05050';
+    msg.innerHTML = `<strong style="color:#E05050">Sin configurar</strong> · Los datos solo se guardan en este navegador`;
+  }
+  if (binId) document.getElementById('sync-binid').value = binId;
+  if (apiKey) document.getElementById('sync-apikey').value = '••••••••••••';
+}
+
+function showSyncSetupBox(binId) {
+  const box = document.getElementById('syncSetupBox');
+  const preview = document.getElementById('syncConfigPreview');
+  if (!box || !preview) return;
+  preview.textContent = `const SYNC_CONFIG = {\n  bin_id: '${binId}',\n  remote_ttl_minutes: 60,\n  api_url: 'https://api.jsonbin.io/v3/b',\n};`;
+  box.style.display = 'block';
+}
+
+function copySyncConfig() {
+  const text = document.getElementById('syncConfigPreview')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => showToast('✓ Copiado'))
+    .catch(() => showToast('Selecciónalo manualmente', true));
+}
+
+/** Escribe UNA clasificación al bin remoto sin pisar las demás */
+async function writeKeyToRemote(key, dataset) {
+  const apiKey = getSyncKey();
+  const binId  = getSyncBinId();
+  if (!apiKey || !binId) return false;
+  try {
+    let remote = {};
+    try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+    remote[key] = dataset;
+    await Clasificaciones.Sync.writeAll(apiKey, remote);
+    return true;
+  } catch (err) {
+    console.warn('[Admin Sync] writeKeyToRemote error:', err);
+    return false;
+  }
+}
+
+/* ─── CACHÉ ─── */
+function renderCacheList() {
+  const el = document.getElementById('cacheList');
+  const PREFIX = 'aterura_standings_';
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
+  if (!keys.length) { el.innerHTML = '<p class="cache-empty">No hay datos en caché local.</p>'; return; }
+  el.innerHTML = keys.map(k => {
+    try {
+      const entry = JSON.parse(localStorage.getItem(k));
+      const age   = Math.round((Date.now() - entry.ts) / 3600000);
+      const exp   = new Date(entry.expires).toLocaleDateString('es-ES');
+      const key   = k.replace(PREFIX, '');
+      const rows  = entry.data?.rows?.length || 0;
+      return `<div class="cache-item">
+        <span class="cache-key">${key}</span>
+        <span class="cache-age">${rows} entradas · Hace ${age}h · Expira ${exp}</span>
+        <button class="btn-admin btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="clearKey('${k}')">✕</button>
+      </div>`;
+    } catch { return ''; }
+  }).join('');
+}
+
+function clearKey(k) { localStorage.removeItem(k); renderCacheList(); showToast('Caché eliminada'); }
+function clearCache() { Clasificaciones.Cache.clearAll(); renderCacheList(); showToast('Caché local limpiada'); }
+async function refreshCache() { clearCache(); showToast('Caché limpiada. Se sincronizará desde JSONBin en la próxima visita.'); }
+
+/* ─── CONFIGURACIÓN ─── */
 function saveConfig() {
   const cfg = {
     wrc_id:   document.getElementById('cfg-wrc-id').value.trim(),
@@ -641,17 +836,14 @@ function saveConfig() {
     season:   parseInt(document.getElementById('cfg-season').value) || 2025,
   };
   localStorage.setItem(CFG_LS_KEY, JSON.stringify(cfg));
-
-  /* Aplica al objeto de config en memoria */
-  STANDINGS_CONFIG.championships.wrc.sheet_id      = cfg.wrc_id;
-  STANDINGS_CONFIG.championships.wrc.cache_days    = cfg.wrc_ttl;
-  STANDINGS_CONFIG.championships.cera.sheet_id     = cfg.cera_id;
-  STANDINGS_CONFIG.championships.cera.cache_days   = cfg.cera_ttl;
-  STANDINGS_CONFIG.championships.canarias.sheet_id = cfg.can_id;
-  STANDINGS_CONFIG.championships.canarias.cache_days = cfg.can_ttl;
+  STANDINGS_CONFIG.championships.wrc.sheet_id           = cfg.wrc_id;
+  STANDINGS_CONFIG.championships.wrc.cache_days         = cfg.wrc_ttl;
+  STANDINGS_CONFIG.championships.cera.sheet_id          = cfg.cera_id;
+  STANDINGS_CONFIG.championships.cera.cache_days        = cfg.cera_ttl;
+  STANDINGS_CONFIG.championships.canarias.sheet_id      = cfg.can_id;
+  STANDINGS_CONFIG.championships.canarias.cache_days    = cfg.can_ttl;
   STANDINGS_CONFIG.season = cfg.season;
-
-  document.getElementById('configSaved').style.display = 'block';
+  document.getElementById('configSaved').style.display  = 'block';
   setTimeout(() => document.getElementById('configSaved').style.display = 'none', 4000);
   showToast('✓ Configuración guardada');
 }
@@ -659,43 +851,14 @@ function saveConfig() {
 function loadConfig() {
   try {
     const cfg = JSON.parse(localStorage.getItem(CFG_LS_KEY) || '{}');
-    document.getElementById('cfg-wrc-id').value  = cfg.wrc_id  || STANDINGS_CONFIG.championships.wrc.sheet_id  || '';
-    document.getElementById('cfg-wrc-ttl').value = cfg.wrc_ttl || STANDINGS_CONFIG.championships.wrc.cache_days || 3;
-    document.getElementById('cfg-cera-id').value  = cfg.cera_id  || STANDINGS_CONFIG.championships.cera.sheet_id  || '';
-    document.getElementById('cfg-cera-ttl').value = cfg.cera_ttl || STANDINGS_CONFIG.championships.cera.cache_days || 3;
-    document.getElementById('cfg-can-id').value  = cfg.can_id  || STANDINGS_CONFIG.championships.canarias.sheet_id  || '';
-    document.getElementById('cfg-can-ttl').value = cfg.can_ttl || STANDINGS_CONFIG.championships.canarias.cache_days || 3;
-    document.getElementById('cfg-season').value  = cfg.season  || STANDINGS_CONFIG.season || 2025;
+    document.getElementById('cfg-wrc-id').value   = cfg.wrc_id   || STANDINGS_CONFIG.championships.wrc.sheet_id       || '';
+    document.getElementById('cfg-wrc-ttl').value  = cfg.wrc_ttl  || STANDINGS_CONFIG.championships.wrc.cache_days      || 3;
+    document.getElementById('cfg-cera-id').value  = cfg.cera_id  || STANDINGS_CONFIG.championships.cera.sheet_id       || '';
+    document.getElementById('cfg-cera-ttl').value = cfg.cera_ttl || STANDINGS_CONFIG.championships.cera.cache_days     || 3;
+    document.getElementById('cfg-can-id').value   = cfg.can_id   || STANDINGS_CONFIG.championships.canarias.sheet_id   || '';
+    document.getElementById('cfg-can-ttl').value  = cfg.can_ttl  || STANDINGS_CONFIG.championships.canarias.cache_days || 3;
+    document.getElementById('cfg-season').value   = cfg.season   || STANDINGS_CONFIG.season || 2025;
   } catch {}
-}
-
-/* ─── CACHÉ ─── */
-function renderCacheList() {
-  const el = document.getElementById('cacheList');
-  const PREFIX = 'aterura_standings_';
-  const keys = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
-  if (!keys.length) { el.innerHTML = '<p class="cache-empty">No hay datos en caché.</p>'; return; }
-  el.innerHTML = keys.map(k => {
-    try {
-      const entry = JSON.parse(localStorage.getItem(k));
-      const age   = Math.round((Date.now() - entry.ts) / 3600000);
-      const exp   = new Date(entry.expires).toLocaleDateString('es-ES');
-      const key   = k.replace(PREFIX, '');
-      return `<div class="cache-item">
-        <span class="cache-key">${key}</span>
-        <span class="cache-age">Hace ${age}h · Expira ${exp}</span>
-        <button class="btn-admin btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="clearKey('${k}')">✕</button>
-      </div>`;
-    } catch { return ''; }
-  }).join('');
-}
-
-function clearKey(k) { localStorage.removeItem(k); renderCacheList(); showToast('Caché eliminada'); }
-function clearCache() { Clasificaciones.Cache.clearAll(); renderCacheList(); showToast('Toda la caché limpiada'); }
-
-async function refreshCache() {
-  clearCache();
-  showToast('Caché limpiada. Los datos se recargarán en la próxima visita.');
 }
 
 /* ─── ENTRADA MANUAL ─── */
@@ -884,17 +1047,36 @@ function getManualDataset() {
   return { rounds, rows };
 }
 
-function saveManualData() {
+async function saveManualData() {
   const { champ, disc, cat } = getManualSelectors();
   const key     = `${champ}::${disc}::${cat}`;
   const dataset = getManualDataset();
   if (!dataset.rows.length) { showToast('No hay datos para guardar', true); return; }
+
   const days = STANDINGS_CONFIG.championships[champ]?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
+
+  /* 1. Guarda en localStorage (inmediato, este dispositivo) */
   Clasificaciones.Cache.set(key, dataset, days);
+
   /* Refresca el badge de estado */
   const cached = Clasificaciones.Cache.get(key);
   updateManualStatus(champ, disc, cat, cached);
-  showToast(`✓ Top ${dataset.rows.length} guardado — ${champ} / ${disc} / ${cat}`);
+
+  const hasBin = !!getSyncBinId();
+  const hasKey = !!getSyncKey();
+
+  if (hasBin && hasKey) {
+    /* 2. Escribe en JSONBin (sincroniza a todos los dispositivos) */
+    showToast('Guardando y sincronizando…');
+    const ok = await writeKeyToRemote(key, dataset);
+    showToast(ok
+      ? `✓ Top ${dataset.rows.length} guardado y sincronizado remotamente`
+      : `✓ Guardado localmente (error al sincronizar — revisa la API Key)`
+    );
+  } else {
+    showToast(`✓ Top ${dataset.rows.length} guardado${!hasBin ? ' · Configura JSONBin para sincronizar entre dispositivos' : ' · Falta API Key para sincronizar'}`);
+  }
+
   renderCacheList();
 }
 
@@ -965,8 +1147,9 @@ function loadNextRally() {
 /* ─── Init ─── */
 if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
   loadConfig();
+  renderSyncStatus();
   renderCacheList();
-  updateManDiscs();     /* Construye selectores Y carga caché del primer combo */
+  updateManDiscs();
   loadNextRally();
 }
 </script>
