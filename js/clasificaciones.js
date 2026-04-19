@@ -67,6 +67,7 @@ const Clasificaciones = (() => {
     REMOTE_TS_KEY: 'aterura_remote_ts',
     BIN_ID_LS:     'aterura_sync_binid',
     API_URL:       'https://api.jsonbin.io/v3/b',
+    TIMEOUT_MS:    12000,  /* 12 segundos máximo por petición */
 
     /** Obtiene el bin_id: primero sync-config.js, luego localStorage */
     getBinId() {
@@ -82,14 +83,29 @@ const Clasificaciones = (() => {
         : this.API_URL;
     },
 
-    /** ¿Cuándo fue la última lectura remota? */
     lastFetchAge() {
-      const ts = parseInt(localStorage.getItem(this.REMOTE_TS_KEY) || '0');
-      return Date.now() - ts;
+      return Date.now() - parseInt(localStorage.getItem(this.REMOTE_TS_KEY) || '0');
     },
 
     markFetch() {
       localStorage.setItem(this.REMOTE_TS_KEY, String(Date.now()));
+    },
+
+    /** fetch con timeout automático usando AbortController */
+    async fetchTimeout(url, options = {}) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), this.TIMEOUT_MS);
+      try {
+        const res = await fetch(url, { ...options, signal: ctrl.signal });
+        clearTimeout(timer);
+        return res;
+      } catch (err) {
+        clearTimeout(timer);
+        if (err.name === 'AbortError') {
+          throw new Error(`Timeout: la petición tardó más de ${this.TIMEOUT_MS / 1000}s sin respuesta. Comprueba tu conexión o intenta más tarde.`);
+        }
+        throw err;
+      }
     },
 
     /** Lee el bin completo de JSONBin (lectura pública, sin API key) */
@@ -98,7 +114,9 @@ const Clasificaciones = (() => {
       if (!binId) throw new Error('bin_id no configurado');
 
       const url = `${this.getApiUrl()}/${binId}/latest`;
-      const res = await fetch(url, { headers: { 'X-JSON-Privacy': 'false' } });
+      const res = await this.fetchTimeout(url, {
+        headers: { 'X-JSON-Privacy': 'false' }
+      });
 
       if (!res.ok) {
         const body = await res.text().catch(() => '');
@@ -111,16 +129,16 @@ const Clasificaciones = (() => {
     /** Escribe el bin completo (requiere API key — solo desde admin) */
     async writeAll(apiKey, data) {
       const binId = this.getBinId();
-      if (!binId) throw new Error('bin_id no configurado — completa el setup en el admin');
+      if (!binId) throw new Error('bin_id no configurado');
       if (!apiKey) throw new Error('API Key no configurada');
 
       const url = `${this.getApiUrl()}/${binId}`;
-      const res = await fetch(url, {
+      const res = await this.fetchTimeout(url, {
         method:  'PUT',
         headers: {
-          'Content-Type':      'application/json',
-          'X-Master-Key':      apiKey,
-          'X-Bin-Versioning':  'false',
+          'Content-Type':     'application/json',
+          'X-Master-Key':     apiKey,
+          'X-Bin-Versioning': 'false',
         },
         body: JSON.stringify(data),
       });
@@ -134,7 +152,7 @@ const Clasificaciones = (() => {
 
     /** Crea un nuevo bin (solo en el setup inicial del admin) */
     async createBin(apiKey) {
-      const res = await fetch(this.getApiUrl(), {
+      const res = await this.fetchTimeout(this.getApiUrl(), {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',
@@ -152,10 +170,6 @@ const Clasificaciones = (() => {
       return json.metadata?.id || null;
     },
 
-    /**
-     * Sincroniza el localStorage con el bin remoto.
-     * Solo ejecuta si han pasado más de remote_ttl_minutes desde la última sync.
-     */
     async syncToLocal(force = false) {
       const ttlMs = ((typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60) * 60000;
       if (!force && this.lastFetchAge() < ttlMs) return false;

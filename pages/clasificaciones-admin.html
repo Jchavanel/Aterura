@@ -795,58 +795,67 @@ async function syncDiagnose() {
   const ok  = s => `✅ ${s}`;
   const err = s => `❌ ${s}`;
   const inf = s => `ℹ️  ${s}`;
+  const upd = () => { box.textContent = lines.join('\n'); };
 
   const binId  = getSyncBinId();
   const apiKey = getSyncKey();
 
-  lines.push(binId
-    ? ok(`Bin ID: ${binId}`)
-    : err('Bin ID no configurado — completa el setup'));
-  lines.push(apiKey
-    ? ok('API Key guardada en este navegador')
-    : err('API Key no encontrada — introdúcela y pulsa "Guardar API Key"'));
+  lines.push(binId  ? ok(`Bin ID: ${binId}`) : err('Bin ID no configurado'));
+  lines.push(apiKey ? ok(`API Key guardada (${apiKey.length} caracteres)`) : err('API Key no encontrada'));
 
   const fromFile = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
   lines.push(fromFile
     ? ok(`sync-config.js tiene bin_id: ${fromFile}`)
-    : inf('sync-config.js tiene bin_id vacío (normal si aún no has hecho commit en GitHub)'));
+    : inf('sync-config.js tiene bin_id vacío (normal hasta hacer commit en GitHub)'));
 
-  if (!binId) { box.textContent = lines.join('\n'); return; }
+  /* Formato de la API Key */
+  if (apiKey) {
+    if (!apiKey.startsWith('$2a$') && !apiKey.startsWith('$2b$')) {
+      lines.push(err('La API Key no tiene el formato correcto — debe empezar por $2a$ o $2b$'));
+      lines.push(inf('  → Ve a jsonbin.io → Cuenta → API Keys → copia la "Master Key" completa'));
+    } else {
+      lines.push(ok('Formato de API Key correcto'));
+    }
+  }
 
-  lines.push('\nTestando lectura pública del bin…');
-  box.textContent = lines.join('\n');
+  if (!binId) { upd(); return; }
+
+  lines.push('\nTestando lectura pública (sin API Key)…'); upd();
   try {
     const data = await Clasificaciones.Sync.readAll();
     const keys = data ? Object.keys(data).filter(k => !k.startsWith('_')) : [];
-    lines.push(ok(`Lectura OK — ${keys.length} clasificaciones en el bin`));
+    lines.push(ok(`Lectura OK — ${keys.length} clasificacion${keys.length !== 1 ? 'es' : ''} en el bin`));
     if (keys.length) lines.push(inf(`  Claves: ${keys.join(', ')}`));
   } catch (e) {
     lines.push(err(`Lectura falló: ${e.message}`));
-    if (e.message.includes('404')) lines.push(inf('  → El bin_id no existe en JSONBin'));
-    if (e.message.includes('401') || e.message.includes('403')) lines.push(inf('  → El bin es privado — en JSONBin ponlo como público'));
+    if (e.message.includes('Timeout')) lines.push(inf('  → Problema de red o JSONBin no responde. Intenta de nuevo.'));
+    if (e.message.includes('404'))     lines.push(inf('  → Bin ID no existe en JSONBin'));
+    if (e.message.includes('401') || e.message.includes('403')) lines.push(inf('  → El bin es privado — en JSONBin ponlo en modo público'));
+    upd(); return;
   }
 
-  if (!apiKey) { box.textContent = lines.join('\n'); return; }
+  if (!apiKey) { upd(); return; }
 
-  lines.push('\nTestando escritura con API Key…');
-  box.textContent = lines.join('\n');
+  lines.push('\nTestando escritura con API Key (puede tardar ~5s)…'); upd();
   try {
     const current = await Clasificaciones.Sync.readAll().catch(() => ({}));
-    await Clasificaciones.Sync.writeAll(apiKey, { ...(current||{}), _test: Date.now() });
-    lines.push(ok('Escritura OK — API Key correcta'));
+    await Clasificaciones.Sync.writeAll(apiKey, { ...(current || {}), _test: Date.now() });
+    lines.push(ok('Escritura OK ✓ — La sincronización entre dispositivos está completamente activa'));
+    /* Limpia el campo _test */
     try {
-      const clean = { ...await Clasificaciones.Sync.readAll() };
+      const clean = { ...(await Clasificaciones.Sync.readAll()) };
       delete clean._test;
       await Clasificaciones.Sync.writeAll(apiKey, clean);
     } catch {}
   } catch (e) {
     lines.push(err(`Escritura falló: ${e.message}`));
-    if (e.message.includes('401')) lines.push(inf('  → API Key incorrecta o sin permisos'));
-    if (e.message.includes('403')) lines.push(inf('  → La API Key no tiene acceso a este bin'));
-    if (e.message.includes('429')) lines.push(inf('  → Límite de peticiones — espera unos minutos'));
+    if (e.message.includes('Timeout'))  lines.push(inf('  → Tiempo de espera agotado — puede ser un problema puntual de red. Prueba de nuevo.'));
+    if (e.message.includes('401'))      lines.push(inf('  → API Key incorrecta o sin permisos de escritura en este bin'));
+    if (e.message.includes('403'))      lines.push(inf('  → La API Key no tiene acceso a este bin (¿bin creado con otra cuenta?)'));
+    if (e.message.includes('429'))      lines.push(inf('  → Demasiadas peticiones — espera 1-2 minutos y vuelve a intentarlo'));
   }
 
-  box.textContent = lines.join('\n');
+  upd();
 }
 
 /** Escribe UNA clasificación al bin remoto sin pisar las demás */
