@@ -25,7 +25,7 @@ const SYNC_CONFIG = {
   remote_ttl_minutes: 60,
   api_url: 'https://api.jsonbin.io/v3/b',
 }; */
-  bin_id: '',
+  bin_id: '69e5560faaba88219717f782',
 
   /* Tiempo mínimo entre lecturas remotas (minutos).
      Evita saturar la API gratuita (10k req/mes).
