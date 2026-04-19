@@ -65,54 +65,76 @@ const Clasificaciones = (() => {
   ══════════════════════════════════════ */
   const Sync = {
     REMOTE_TS_KEY: 'aterura_remote_ts',
+    BIN_ID_LS:     'aterura_sync_binid',
+    API_URL:       'https://api.jsonbin.io/v3/b',
+
+    /** Obtiene el bin_id: primero sync-config.js, luego localStorage */
+    getBinId() {
+      const fromConfig  = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+      const fromStorage = localStorage.getItem(this.BIN_ID_LS) || '';
+      return fromConfig || fromStorage;
+    },
+
+    /** URL base de la API */
+    getApiUrl() {
+      return (typeof SYNC_CONFIG !== 'undefined' && SYNC_CONFIG.api_url)
+        ? SYNC_CONFIG.api_url
+        : this.API_URL;
+    },
 
     /** ¿Cuándo fue la última lectura remota? */
     lastFetchAge() {
       const ts = parseInt(localStorage.getItem(this.REMOTE_TS_KEY) || '0');
-      return Date.now() - ts; /* ms desde la última lectura */
+      return Date.now() - ts;
     },
 
-    /** Marca timestamp de la última lectura remota */
     markFetch() {
       localStorage.setItem(this.REMOTE_TS_KEY, String(Date.now()));
     },
 
     /** Lee el bin completo de JSONBin (lectura pública, sin API key) */
     async readAll() {
-      const binId = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
-      if (!binId) return null;
+      const binId = this.getBinId();
+      if (!binId) throw new Error('bin_id no configurado');
 
-      const url = `${SYNC_CONFIG.api_url}/${binId}/latest`;
-      const res = await fetch(url, {
-        headers: { 'X-JSON-Privacy': 'false' }
-      });
-      if (!res.ok) throw new Error(`JSONBin HTTP ${res.status}`);
+      const url = `${this.getApiUrl()}/${binId}/latest`;
+      const res = await fetch(url, { headers: { 'X-JSON-Privacy': 'false' } });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`JSONBin read HTTP ${res.status}: ${body.substring(0, 120)}`);
+      }
       const json = await res.json();
-      return json.record || null; /* { "key::disc::cat": {rounds,rows}, ... } */
+      return json.record || null;
     },
 
     /** Escribe el bin completo (requiere API key — solo desde admin) */
     async writeAll(apiKey, data) {
-      const binId = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
-      if (!binId || !apiKey) throw new Error('Falta bin_id o API key');
+      const binId = this.getBinId();
+      if (!binId) throw new Error('bin_id no configurado — completa el setup en el admin');
+      if (!apiKey) throw new Error('API Key no configurada');
 
-      const url = `${SYNC_CONFIG.api_url}/${binId}`;
+      const url = `${this.getApiUrl()}/${binId}`;
       const res = await fetch(url, {
         method:  'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': apiKey,
-          'X-Bin-Versioning': 'false',
+          'Content-Type':      'application/json',
+          'X-Master-Key':      apiKey,
+          'X-Bin-Versioning':  'false',
         },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error(`JSONBin write HTTP ${res.status}`);
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`JSONBin write HTTP ${res.status}: ${body.substring(0, 200)}`);
+      }
       return await res.json();
     },
 
     /** Crea un nuevo bin (solo en el setup inicial del admin) */
     async createBin(apiKey) {
-      const res = await fetch(`${SYNC_CONFIG.api_url}`, {
+      const res = await fetch(this.getApiUrl(), {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',
@@ -122,30 +144,31 @@ const Clasificaciones = (() => {
         },
         body: JSON.stringify({ _info: 'Escudería Aterura — Clasificaciones' }),
       });
-      if (!res.ok) throw new Error(`JSONBin create HTTP ${res.status}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`JSONBin create HTTP ${res.status}: ${body.substring(0, 200)}`);
+      }
       const json = await res.json();
       return json.metadata?.id || null;
     },
 
     /**
      * Sincroniza el localStorage con el bin remoto.
-     * Descarga todos los datasets del bin y los guarda en caché local.
      * Solo ejecuta si han pasado más de remote_ttl_minutes desde la última sync.
      */
     async syncToLocal(force = false) {
       const ttlMs = ((typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60) * 60000;
-      if (!force && this.lastFetchAge() < ttlMs) return false; /* Demasiado reciente */
+      if (!force && this.lastFetchAge() < ttlMs) return false;
 
       const remote = await this.readAll();
       if (!remote) return false;
 
       const days = (typeof STANDINGS_CONFIG !== 'undefined')
-        ? STANDINGS_CONFIG.default_cache_days
-        : 3;
+        ? STANDINGS_CONFIG.default_cache_days : 3;
 
       let count = 0;
       Object.entries(remote).forEach(([key, dataset]) => {
-        if (key.startsWith('_')) return; /* Ignora metadatos */
+        if (key.startsWith('_')) return;
         if (dataset?.rows?.length) {
           Cache.set(key, dataset, days);
           count++;
@@ -226,7 +249,7 @@ const Clasificaciones = (() => {
     }
 
     /* 2. JSONBin — sincroniza TODO el bin a local y reintenta la caché */
-    if (typeof SYNC_CONFIG !== 'undefined' && SYNC_CONFIG.bin_id) {
+    if (Sync.getBinId()) {
       try {
         await Sync.syncToLocal(forceRefresh);
         const cached = Cache.get(key);

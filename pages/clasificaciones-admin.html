@@ -368,7 +368,11 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
         <button class="btn-admin btn-save"  onclick="syncSetup()">🚀 Crear bin y activar sincronización</button>
         <button class="btn-admin btn-gold"  onclick="syncNow()">↻ Forzar sincronización ahora</button>
         <button class="btn-admin btn-ghost" onclick="saveSyncKey()">💾 Guardar API Key</button>
+        <button class="btn-admin btn-ghost" onclick="syncDiagnose()">🔍 Diagnóstico</button>
       </div>
+
+      <!-- Panel de diagnóstico -->
+      <div id="diagBox" style="display:none;margin-top:16px;background:var(--dark-2);border:1px solid rgba(138,170,200,0.1);padding:16px;font-family:monospace;font-size:12px;line-height:1.8;color:var(--light);overflow-x:auto;white-space:pre-wrap;"></div>
 
       <!-- Caja de instrucciones post-setup -->
       <div id="syncSetupBox" style="display:none;margin-top:20px;background:rgba(60,179,113,0.07);border:1px solid rgba(60,179,113,0.2);border-left:3px solid #3CB371;padding:16px 20px;">
@@ -781,19 +785,88 @@ function copySyncConfig() {
     .catch(() => showToast('Selecciónalo manualmente', true));
 }
 
+/** Diagnóstico completo — muestra el estado real sin adivinar */
+async function syncDiagnose() {
+  const box = document.getElementById('diagBox');
+  box.style.display = 'block';
+  box.textContent = 'Ejecutando diagnóstico…\n';
+
+  const lines = [];
+  const ok  = s => `✅ ${s}`;
+  const err = s => `❌ ${s}`;
+  const inf = s => `ℹ️  ${s}`;
+
+  const binId  = getSyncBinId();
+  const apiKey = getSyncKey();
+
+  lines.push(binId
+    ? ok(`Bin ID: ${binId}`)
+    : err('Bin ID no configurado — completa el setup'));
+  lines.push(apiKey
+    ? ok('API Key guardada en este navegador')
+    : err('API Key no encontrada — introdúcela y pulsa "Guardar API Key"'));
+
+  const fromFile = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+  lines.push(fromFile
+    ? ok(`sync-config.js tiene bin_id: ${fromFile}`)
+    : inf('sync-config.js tiene bin_id vacío (normal si aún no has hecho commit en GitHub)'));
+
+  if (!binId) { box.textContent = lines.join('\n'); return; }
+
+  lines.push('\nTestando lectura pública del bin…');
+  box.textContent = lines.join('\n');
+  try {
+    const data = await Clasificaciones.Sync.readAll();
+    const keys = data ? Object.keys(data).filter(k => !k.startsWith('_')) : [];
+    lines.push(ok(`Lectura OK — ${keys.length} clasificaciones en el bin`));
+    if (keys.length) lines.push(inf(`  Claves: ${keys.join(', ')}`));
+  } catch (e) {
+    lines.push(err(`Lectura falló: ${e.message}`));
+    if (e.message.includes('404')) lines.push(inf('  → El bin_id no existe en JSONBin'));
+    if (e.message.includes('401') || e.message.includes('403')) lines.push(inf('  → El bin es privado — en JSONBin ponlo como público'));
+  }
+
+  if (!apiKey) { box.textContent = lines.join('\n'); return; }
+
+  lines.push('\nTestando escritura con API Key…');
+  box.textContent = lines.join('\n');
+  try {
+    const current = await Clasificaciones.Sync.readAll().catch(() => ({}));
+    await Clasificaciones.Sync.writeAll(apiKey, { ...(current||{}), _test: Date.now() });
+    lines.push(ok('Escritura OK — API Key correcta'));
+    try {
+      const clean = { ...await Clasificaciones.Sync.readAll() };
+      delete clean._test;
+      await Clasificaciones.Sync.writeAll(apiKey, clean);
+    } catch {}
+  } catch (e) {
+    lines.push(err(`Escritura falló: ${e.message}`));
+    if (e.message.includes('401')) lines.push(inf('  → API Key incorrecta o sin permisos'));
+    if (e.message.includes('403')) lines.push(inf('  → La API Key no tiene acceso a este bin'));
+    if (e.message.includes('429')) lines.push(inf('  → Límite de peticiones — espera unos minutos'));
+  }
+
+  box.textContent = lines.join('\n');
+}
+
 /** Escribe UNA clasificación al bin remoto sin pisar las demás */
 async function writeKeyToRemote(key, dataset) {
   const apiKey = getSyncKey();
   const binId  = getSyncBinId();
-  if (!apiKey || !binId) return false;
+
+  if (!apiKey) { console.warn('[Sync] Sin API Key'); return false; }
+  if (!binId)  { console.warn('[Sync] Sin Bin ID'); return false; }
+
   try {
     let remote = {};
-    try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+    try { remote = await Clasificaciones.Sync.readAll() || {}; } catch (e) {
+      console.warn('[Sync] No se pudo leer el bin, escribiendo desde cero:', e.message);
+    }
     remote[key] = dataset;
     await Clasificaciones.Sync.writeAll(apiKey, remote);
     return true;
   } catch (err) {
-    console.warn('[Admin Sync] writeKeyToRemote error:', err);
+    console.error('[Sync] writeKeyToRemote error:', err.message);
     return false;
   }
 }
