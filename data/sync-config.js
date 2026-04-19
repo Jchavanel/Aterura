@@ -20,7 +20,6 @@
 ═══════════════════════════════════════════════════════════ */
 
 const SYNC_CONFIG = {
-  /* ← const SYNC_CONFIG = {
   bin_id: '69e5560faaba88219717f782',
   remote_ttl_minutes: 60,
   api_url: 'https://api.jsonbin.io/v3/b',
