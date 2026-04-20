@@ -615,6 +615,97 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
       </div>
     </div>
 
+    <!-- ── Sección: Gestión de Competiciones ── -->
+    <div class="admin-section" id="compSection">
+      <h3>🏆 Gestión de competiciones</h3>
+      <p style="font-size:14px;color:var(--light);margin-bottom:20px;line-height:1.6;">
+        Edita los carteles de las pruebas que aparecen en la página principal. Los cambios se sincronizan inmediatamente a todos los dispositivos vía JSONBin.
+      </p>
+
+      <!-- Pestañas de competición -->
+      <div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap;" id="compTabBtns"></div>
+
+      <!-- Formulario de la competición activa -->
+      <div id="compForm" style="background:var(--dark-2);border:1px solid rgba(138,170,200,0.08);padding:24px;">
+
+        <!-- Vista previa de la tarjeta -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+          <!-- Campos -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <div class="form-g">
+              <label>Título (línea 1)</label>
+              <input type="text" id="comp-titulo1" placeholder="Rallye Villa">
+            </div>
+            <div class="form-g">
+              <label>Título (línea 2)</label>
+              <input type="text" id="comp-titulo2" placeholder="de Teror">
+            </div>
+            <div class="form-g">
+              <label>Número / Letra de fondo (decorativo)</label>
+              <input type="text" id="comp-numero" placeholder="40" style="max-width:80px;">
+              <span class="hint">Número grande semitransparente detrás del título</span>
+            </div>
+            <div class="form-g">
+              <label>Badge — Tipo</label>
+              <select id="comp-badge-tipo">
+                <option value="badge-gold">Dorado — Prueba estrella</option>
+                <option value="badge">Azul — Categoría normal</option>
+                <option value="badge-outline">Borde — Prueba secundaria</option>
+              </select>
+            </div>
+            <div class="form-g">
+              <label>Badge — Texto</label>
+              <input type="text" id="comp-badge-texto" placeholder="Prueba estrella">
+            </div>
+            <div class="form-g">
+              <label>Descripción corta</label>
+              <textarea id="comp-desc" style="min-height:72px;" placeholder="La prueba que lo inició todo…"></textarea>
+            </div>
+            <div class="form-g">
+              <label>URL de la tarjeta</label>
+              <input type="text" id="comp-url" placeholder="pages/rallye-villa-de-teror.html">
+              <span class="hint">Usa # si aún no tiene página propia</span>
+            </div>
+
+            <!-- Meta datos: hasta 3 pares label/valor -->
+            <div style="background:var(--dark-3);padding:14px;border:1px solid rgba(138,170,200,0.07);">
+              <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Datos clave (pie de tarjeta)</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-g"><label>Etiqueta 1</label><input type="text" id="comp-m1l" placeholder="Edición"></div>
+                <div class="form-g"><label>Valor 1</label><input type="text" id="comp-m1v" placeholder="44ª"></div>
+                <div class="form-g"><label>Etiqueta 2</label><input type="text" id="comp-m2l" placeholder="Fecha"></div>
+                <div class="form-g"><label>Valor 2</label><input type="text" id="comp-m2v" placeholder="Sep 2026"></div>
+                <div class="form-g"><label>Etiqueta 3</label><input type="text" id="comp-m3l" placeholder="Tipo"></div>
+                <div class="form-g"><label>Valor 3</label><input type="text" id="comp-m3v" placeholder="Asfalto"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Vista previa en tiempo real -->
+          <div>
+            <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Vista previa</p>
+            <div id="compPreview" style="position:relative;background:var(--dark-3);padding:32px;overflow:hidden;min-height:200px;border:1px solid rgba(138,170,200,0.08);">
+              <!-- se rellena con JS -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn-admin btn-save" onclick="saveCompeticion()">💾 Guardar competición</button>
+        <button class="btn-admin btn-gold" onclick="saveAllCompeticiones()">🚀 Guardar y publicar todas</button>
+      </div>
+
+      <div id="compSavedMsg" style="display:none;margin-top:10px;font-family:var(--font-condensed);font-size:13px;color:#3CB371;">
+        ✓ Competiciones guardadas y sincronizadas — visibles en la web principal.
+      </div>
+    </div>
+
     <!-- ── Sección 7: Accesos rápidos ── -->
     <div class="admin-section">
       <h3>🔗 Accesos rápidos</h3>
@@ -653,6 +744,7 @@ function checkPin() {
     renderCacheList();
     updateManDiscs();
     loadNextRally();
+    loadCompeticiones();
   } else {
     const err = document.getElementById('pinError');
     err.textContent = 'PIN incorrecto. Inténtalo de nuevo.';
@@ -1298,13 +1390,239 @@ async function loadNextRally() {
   } catch {}
 }
 
-/* ─── Init ─── */
-if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
+/* ═══════════════════════════════════════════════════════════
+   GESTIÓN DE COMPETICIONES
+   Datos guardados en JSONBin bajo la clave _competiciones
+═══════════════════════════════════════════════════════════ */
+
+/* Datos por defecto de las 4 competiciones */
+const COMP_DEFAULTS = [
+  {
+    id: 'rallye-teror',
+    titulo1: 'Rallye Villa', titulo2: 'de Teror',
+    numero: '40',
+    badge_tipo: 'badge-gold', badge_texto: 'Prueba estrella',
+    desc: 'La prueba que lo inició todo. Parte del Campeonato de Rallyes de Canarias y orgullo de Teror desde 1981.',
+    url: 'pages/rallye-villa-de-teror.html',
+    m1l: 'Edición', m1v: '44ª',
+    m2l: 'Fecha',   m2v: 'Sep 2026',
+    m3l: 'Tipo',    m3v: 'Asfalto',
+  },
+  {
+    id: 'gc-historic',
+    titulo1: 'Gran Canaria', titulo2: 'Historic Rallye',
+    numero: '8',
+    badge_tipo: 'badge', badge_texto: 'Historic',
+    desc: 'Reviviendo la historia del motor clásico en las carreteras de Gran Canaria.',
+    url: 'pages/gran-canaria-historic.html',
+    m1l: 'Edición', m1v: 'IX',
+    m2l: 'Fecha',   m2v: 'Sep 2026',
+    m3l: 'Tipo',    m3v: 'Histórico',
+  },
+  {
+    id: 'subida-tejeda',
+    titulo1: 'Subida', titulo2: 'de Tejeda',
+    numero: 'T',
+    badge_tipo: 'badge-outline', badge_texto: 'Montaña',
+    desc: 'Curvas cerradas, desnivel extremo y el Roque Bentayga como telón de fondo.',
+    url: 'pages/subida-tejeda.html',
+    m1l: 'Tipo', m1v: 'Montaña',
+    m2l: 'Fecha', m2v: 'Por confirmar',
+    m3l: '', m3v: '',
+  },
+  {
+    id: 'subida-arucas',
+    titulo1: 'Subida', titulo2: 'de Arucas',
+    numero: 'A',
+    badge_tipo: 'badge-outline', badge_texto: 'Montaña',
+    desc: 'Velocidad y precisión en las calles de la ciudad del ron en el norte de la isla.',
+    url: 'pages/subida-arucas.html',
+    m1l: 'Tipo', m1v: 'Montaña',
+    m2l: 'Fecha', m2v: 'Por confirmar',
+    m3l: '', m3v: '',
+  },
+];
+
+let compData     = JSON.parse(JSON.stringify(COMP_DEFAULTS)); /* copia mutable */
+let activeCompIdx = 0;
+
+/* Pestañas de competición */
+function buildCompTabs() {
+  const wrap = document.getElementById('compTabBtns');
+  if (!wrap) return;
+  wrap.innerHTML = compData.map((c, i) => `
+    <button onclick="selectComp(${i})"
+      style="font-family:var(--font-condensed);font-size:12px;font-weight:700;letter-spacing:0.12em;
+             text-transform:uppercase;padding:8px 16px;border:1px solid;cursor:pointer;transition:all 0.2s;
+             background:${i===activeCompIdx?'var(--red)':'transparent'};
+             color:${i===activeCompIdx?'#fff':'var(--muted)'};
+             border-color:${i===activeCompIdx?'var(--red)':'rgba(138,170,200,0.2)'};">
+      ${c.titulo1} ${c.titulo2}
+    </button>`).join('');
+}
+
+function selectComp(idx) {
+  /* Guarda el estado actual antes de cambiar */
+  saveCompFields(activeCompIdx);
+  activeCompIdx = idx;
+  buildCompTabs();
+  loadCompFields(idx);
+  updateCompPreview();
+}
+
+/* Carga los campos del formulario desde compData[idx] */
+function loadCompFields(idx) {
+  const c = compData[idx];
+  if (!c) return;
+  document.getElementById('comp-titulo1').value    = c.titulo1    || '';
+  document.getElementById('comp-titulo2').value    = c.titulo2    || '';
+  document.getElementById('comp-numero').value     = c.numero     || '';
+  document.getElementById('comp-badge-tipo').value = c.badge_tipo || 'badge-outline';
+  document.getElementById('comp-badge-texto').value= c.badge_texto|| '';
+  document.getElementById('comp-desc').value       = c.desc       || '';
+  document.getElementById('comp-url').value        = c.url        || '#';
+  document.getElementById('comp-m1l').value        = c.m1l        || '';
+  document.getElementById('comp-m1v').value        = c.m1v        || '';
+  document.getElementById('comp-m2l').value        = c.m2l        || '';
+  document.getElementById('comp-m2v').value        = c.m2v        || '';
+  document.getElementById('comp-m3l').value        = c.m3l        || '';
+  document.getElementById('comp-m3v').value        = c.m3v        || '';
+}
+
+/* Lee los campos del formulario y los guarda en compData[idx] */
+function saveCompFields(idx) {
+  if (idx === undefined || idx === null) return;
+  compData[idx] = {
+    ...compData[idx],
+    titulo1:    document.getElementById('comp-titulo1').value.trim(),
+    titulo2:    document.getElementById('comp-titulo2').value.trim(),
+    numero:     document.getElementById('comp-numero').value.trim(),
+    badge_tipo: document.getElementById('comp-badge-tipo').value,
+    badge_texto:document.getElementById('comp-badge-texto').value.trim(),
+    desc:       document.getElementById('comp-desc').value.trim(),
+    url:        document.getElementById('comp-url').value.trim() || '#',
+    m1l: document.getElementById('comp-m1l').value.trim(),
+    m1v: document.getElementById('comp-m1v').value.trim(),
+    m2l: document.getElementById('comp-m2l').value.trim(),
+    m2v: document.getElementById('comp-m2v').value.trim(),
+    m3l: document.getElementById('comp-m3l').value.trim(),
+    m3v: document.getElementById('comp-m3v').value.trim(),
+  };
+}
+
+/* Vista previa en tiempo real */
+function updateCompPreview() {
+  const el = document.getElementById('compPreview');
+  if (!el) return;
+  const c = {
+    titulo1:    document.getElementById('comp-titulo1').value,
+    titulo2:    document.getElementById('comp-titulo2').value,
+    numero:     document.getElementById('comp-numero').value,
+    badge_tipo: document.getElementById('comp-badge-tipo').value,
+    badge_texto:document.getElementById('comp-badge-texto').value,
+    desc:       document.getElementById('comp-desc').value,
+    m1l: document.getElementById('comp-m1l').value,
+    m1v: document.getElementById('comp-m1v').value,
+    m2l: document.getElementById('comp-m2l').value,
+    m2v: document.getElementById('comp-m2v').value,
+    m3l: document.getElementById('comp-m3l').value,
+    m3v: document.getElementById('comp-m3v').value,
+  };
+  const metas = [[c.m1l,c.m1v],[c.m2l,c.m2v],[c.m3l,c.m3v]]
+    .filter(([l,v])=>l||v)
+    .map(([l,v])=>`<div style="display:flex;flex-direction:column;gap:2px;">
+      <span style="font-family:var(--font-condensed);font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);">${l}</span>
+      <span style="font-family:var(--font-condensed);font-size:14px;font-weight:600;color:var(--white);">${v}</span>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <span style="position:absolute;top:-10px;right:-10px;font-family:var(--font-display);font-size:100px;color:rgba(255,255,255,0.04);line-height:1;pointer-events:none;">${c.numero||''}</span>
+    <span class="${c.badge_tipo||'badge-outline'}" style="display:inline-block;font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;padding:4px 10px;margin-bottom:14px;
+      ${c.badge_tipo==='badge-gold'?'background:var(--gold-light);color:#06080F;':
+        c.badge_tipo==='badge'?'background:var(--red);color:#fff;':
+        'background:transparent;border:1px solid rgba(138,170,200,0.25);color:var(--light);'}">${c.badge_texto||'Badge'}</span>
+    <h3 style="font-family:var(--font-display);font-size:28px;line-height:1;color:var(--white);margin-bottom:8px;letter-spacing:0.02em;">${c.titulo1||'Título'}<br>${c.titulo2||''}</h3>
+    <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;">${c.desc||'Descripción…'}</p>
+    ${metas?`<div style="display:flex;gap:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);">${metas}</div>`:''}`;
+}
+
+/* Conecta eventos de cambio en tiempo real para la preview */
+['comp-titulo1','comp-titulo2','comp-numero','comp-badge-tipo','comp-badge-texto','comp-desc',
+ 'comp-m1l','comp-m1v','comp-m2l','comp-m2v','comp-m3l','comp-m3v'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateCompPreview);
+  if (el) el.addEventListener('change', updateCompPreview);
+});
+
+/* Guarda competición activa en localStorage */
+function saveCompeticion() {
+  saveCompFields(activeCompIdx);
+  localStorage.setItem('aterura_comp_data', JSON.stringify(compData));
+  showToast(`✓ ${compData[activeCompIdx].titulo1} ${compData[activeCompIdx].titulo2} guardado localmente`);
+}
+
+/* Guarda TODAS las competiciones en JSONBin */
+async function saveAllCompeticiones() {
+  /* Guarda los campos actuales primero */
+  saveCompFields(activeCompIdx);
+  localStorage.setItem('aterura_comp_data', JSON.stringify(compData));
+
+  const apiKey = getSyncKey();
+  const binId  = getSyncBinId();
+  if (!apiKey || !binId) {
+    showToast('✓ Guardado localmente (configura JSONBin para sincronizar)', false);
+    return;
+  }
+
+  showToast('Publicando competiciones…');
+  try {
+    let remote = {};
+    try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+    remote['_competiciones'] = compData;
+    await Clasificaciones.Sync.writeAll(apiKey, remote);
+    document.getElementById('compSavedMsg').style.display = 'block';
+    setTimeout(() => document.getElementById('compSavedMsg').style.display = 'none', 4000);
+    showToast('✓ Competiciones publicadas — visibles en la web principal');
+  } catch (err) {
+    showToast('Error al publicar: ' + err.message, true);
+  }
+}
+
+/* Carga competiciones desde JSONBin o localStorage al entrar al admin */
+async function loadCompeticiones() {
+  /* 1. localStorage */
+  try {
+    const local = JSON.parse(localStorage.getItem('aterura_comp_data') || 'null');
+    if (local?.length) {
+      compData = local;
+      buildCompTabs();
+      loadCompFields(0);
+      updateCompPreview();
+      return;
+    }
+  } catch {}
+
+  /* 2. JSONBin */
+  const binId = getSyncBinId();
+  if (!binId) { buildCompTabs(); loadCompFields(0); updateCompPreview(); return; }
+  try {
+    const remote = await Clasificaciones.Sync.readAll();
+    if (remote?._competiciones?.length) {
+      compData = remote._competiciones;
+      localStorage.setItem('aterura_comp_data', JSON.stringify(compData));
+    }
+  } catch {}
+  buildCompTabs();
+  loadCompFields(0);
+  updateCompPreview();
+}
+
   loadConfig();
   renderSyncStatus();
   renderCacheList();
   updateManDiscs();
   loadNextRally();
+  loadCompeticiones();
 }
 </script>
 

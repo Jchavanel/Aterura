@@ -403,12 +403,11 @@
   <div class="section-inner">
     <div class="section-label reveal">
       <div class="section-label-line"></div>
-      <span class="section-label-text">Temporada 2025</span>
+      <span class="section-label-text" id="comp-season-label">Temporada 2025</span>
     </div>
     <h2 class="section-title reveal reveal-delay-1">Competiciones</h2>
-
-    <div class="comp-grid">
-
+    <div class="comp-grid" id="compGrid">
+      <!-- Renderizado dinámicamente desde JSONBin. Fallback estático abajo. -->
       <a href="pages/rallye-villa-de-teror.html" class="comp-card reveal">
         <span class="comp-card-number" aria-hidden="true">40</span>
         <span class="badge badge-gold">Prueba estrella</span>
@@ -419,11 +418,8 @@
           <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Sep 2025</span></div>
           <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Asfalto</span></div>
         </div>
-        <div class="comp-card-arrow" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+        <div class="comp-card-arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
-
       <a href="pages/gran-canaria-historic.html" class="comp-card reveal reveal-delay-1">
         <span class="comp-card-number" aria-hidden="true">8</span>
         <span class="badge">Historic</span>
@@ -434,11 +430,8 @@
           <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Sep 2025</span></div>
           <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Histórico</span></div>
         </div>
-        <div class="comp-card-arrow" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+        <div class="comp-card-arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
-
       <a href="pages/subida-tejeda.html" class="comp-card reveal reveal-delay-2">
         <span class="comp-card-number" aria-hidden="true">T</span>
         <span class="badge badge-outline">Montaña</span>
@@ -448,11 +441,8 @@
           <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Montaña</span></div>
           <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Por confirmar</span></div>
         </div>
-        <div class="comp-card-arrow" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+        <div class="comp-card-arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
-
       <a href="pages/subida-arucas.html" class="comp-card reveal reveal-delay-3">
         <span class="comp-card-number" aria-hidden="true">A</span>
         <span class="badge badge-outline">Montaña</span>
@@ -462,11 +452,8 @@
           <div class="comp-meta-item"><span class="meta-label">Tipo</span><span class="meta-val">Montaña</span></div>
           <div class="comp-meta-item"><span class="meta-label">Fecha</span><span class="meta-val">Por confirmar</span></div>
         </div>
-        <div class="comp-card-arrow" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+        <div class="comp-card-arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
-
     </div>
   </div>
 </section>
@@ -791,6 +778,86 @@
 <script src="js/nav.js"></script>
 <script src="js/animations.js"></script>
 <script src="js/form.js"></script>
+<script src="data/sync-config.js"></script>
+
+<script>
+/* ── Renderiza las tarjetas de competición desde JSONBin ── */
+(async function loadCompeticiones() {
+  const arrowSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  function renderCard(c, delay) {
+    const metas = [[c.m1l,c.m1v],[c.m2l,c.m2v],[c.m3l,c.m3v]]
+      .filter(([l,v]) => l || v)
+      .map(([l,v]) => `<div class="comp-meta-item"><span class="meta-label">${l}</span><span class="meta-val">${v}</span></div>`)
+      .join('');
+
+    return `<a href="${c.url||'#'}" class="comp-card reveal${delay?` reveal-delay-${delay}`:''}">
+      <span class="comp-card-number" aria-hidden="true">${c.numero||''}</span>
+      <span class="${c.badge_tipo||'badge-outline'}">${c.badge_texto||''}</span>
+      <h3>${c.titulo1||''}<br>${c.titulo2||''}</h3>
+      <p>${c.desc||''}</p>
+      ${metas ? `<div class="comp-card-meta">${metas}</div>` : ''}
+      <div class="comp-card-arrow" aria-hidden="true">${arrowSvg}</div>
+    </a>`;
+  }
+
+  /* Actualiza también la etiqueta de temporada */
+  function applyConfig(cfg) {
+    if (cfg?.season) {
+      const el = document.getElementById('comp-season-label');
+      if (el) el.textContent = `Temporada ${cfg.season}`;
+    }
+  }
+
+  try {
+    const binId = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+    if (!binId) return; /* Sin bin_id → muestra el HTML estático */
+
+    const res  = await fetch(`${SYNC_CONFIG.api_url}/${binId}/latest`);
+    if (!res.ok) return;
+    const json = await res.json();
+    const remote = json.record;
+    if (!remote) return;
+
+    /* Aplica config (temporada) */
+    if (remote._config) applyConfig(remote._config);
+
+    /* Renderiza competiciones si existen en el bin */
+    if (remote._competiciones?.length) {
+      const grid = document.getElementById('compGrid');
+      if (grid) {
+        const delays = [0, 1, 2, 3];
+        grid.innerHTML = remote._competiciones
+          .map((c, i) => renderCard(c, delays[i] || 0))
+          .join('');
+
+        /* Re-observa los nuevos elementos para las animaciones */
+        grid.querySelectorAll('.reveal').forEach(el => {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(32px)';
+        });
+        if (typeof IntersectionObserver !== 'undefined') {
+          const obs = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+              if (e.isIntersecting) {
+                e.target.style.opacity = '1';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+                obs.unobserve(e.target);
+              }
+            });
+          }, { threshold: 0.08 });
+          grid.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+        }
+      }
+    }
+
+  } catch (e) {
+    console.warn('[Competiciones] No se pudo cargar desde JSONBin:', e.message);
+    /* Fallback silencioso al HTML estático */
+  }
+})();
+</script>
 
 </body>
 </html>
