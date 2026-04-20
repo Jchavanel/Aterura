@@ -151,59 +151,50 @@
 
 
 
-<!-- ═══════════════════════════════════════════
-     DEBUG PANEL — siempre en el DOM, fuera del IIFE
-     Visible desde el botón ⚙ o con ?debug=1
-═══════════════════════════════════════════ -->
+
+<!-- ═══ DEBUG PANEL ═══ -->
 <div id="debugPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:45vh;overflow-y:auto;background:#05080E;border-top:2px solid #F0B800;font-family:monospace;font-size:12px;z-index:9999;padding:12px 16px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-    <strong style="color:#F0B800;letter-spacing:0.1em;">🔍 DEBUG — Clasificaciones</strong>
+    <strong style="color:#F0B800;">🔍 DEBUG — Clasificaciones</strong>
     <div style="display:flex;gap:8px;">
-      <button id="dbgRefresh" style="background:rgba(240,184,0,0.12);border:1px solid #F0B800;color:#F0B800;padding:3px 10px;cursor:pointer;font-size:11px;font-family:monospace;">↻ Recargar datos</button>
+      <button id="dbgRefresh" style="background:rgba(240,184,0,0.12);border:1px solid #F0B800;color:#F0B800;padding:3px 10px;cursor:pointer;font-size:11px;">↻ Forzar recarga</button>
       <button onclick="document.getElementById('debugPanel').style.display='none'" style="background:none;border:1px solid #444;color:#888;padding:3px 8px;cursor:pointer;font-size:11px;">✕</button>
     </div>
   </div>
   <pre id="debugLog" style="margin:0;color:#8AAAC8;line-height:1.8;white-space:pre-wrap;word-break:break-all;"></pre>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SCRIPTS — con v= para forzar cache-bust
-     Cambia el número al hacer deploy si hay problemas de caché
-═══════════════════════════════════════════ -->
+<!-- ═══ SCRIPTS v7 ═══ -->
 <script>document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());</script>
-<script src="../data/standings-config.js?v=6"></script>
-<script src="../data/sync-config.js?v=6"></script>
-<script src="../data/demo-data.js?v=6"></script>
-<script src="../js/clasificaciones.js?v=6"></script>
-<script src="../js/nav.js?v=6"></script>
-<script src="../js/animations.js?v=6"></script>
+<script src="../data/standings-config.js?v=8"></script>
+<script src="../data/sync-config.js?v=8"></script>
+<script src="../data/demo-data.js?v=8"></script>
+<script src="../js/clasificaciones.js?v=8"></script>
+<script src="../js/nav.js?v=8"></script>
+<script src="../js/animations.js?v=8"></script>
 
 <script>
-/* ════════════════════════════════════════════════
-   DEBUG — inicializado ANTES del IIFE principal
-   para capturar errores aunque el IIFE falle
-════════════════════════════════════════════════ */
+/* ── Debug helper — fuera del IIFE para capturar errores globales ── */
 const _dbg = (() => {
-  const lines = [];
-  const el    = () => document.getElementById('debugLog');
-  const panel = () => document.getElementById('debugPanel');
+  const lines  = [];
   const active = new URLSearchParams(location.search).has('debug');
+  const panel  = () => document.getElementById('debugPanel');
+  const log_el = () => document.getElementById('debugLog');
 
-  function log(msg) {
-    if (!active) return;
-    const ts = new Date().toLocaleTimeString('es-ES');
-    lines.push(`[${ts}] ${msg}`);
-    try { el().textContent = lines.join('\n'); panel().style.display = 'block'; } catch {}
-  }
-
-  /* Captura errores globales de JS */
   window.addEventListener('error', ev => {
-    log(`❌ JS ERROR: ${ev.message} (${ev.filename?.split('/').pop()}:${ev.lineno})`);
-    panel() && (panel().style.display = 'block');
-    el() && (el().textContent = lines.join('\n'));
+    const msg = `❌ JS ERROR: ${ev.message} (${(ev.filename||'').split('/').pop()}:${ev.lineno})`;
+    lines.push(msg);
+    try { log_el().textContent = lines.join('\n'); panel().style.display = 'block'; } catch {}
   });
 
-  return { log, active };
+  return {
+    active,
+    log(msg) {
+      if (!active) return;
+      lines.push(`[${new Date().toLocaleTimeString('es-ES')}] ${msg}`);
+      try { log_el().textContent = lines.join('\n'); panel().style.display = 'block'; } catch {}
+    }
+  };
 })();
 
 /* ════════════════════════════════════════════════
@@ -212,30 +203,26 @@ const _dbg = (() => {
 (function () {
   'use strict';
 
-  /* ── Estado activo ── */
+  /* ── Estado ── */
   let activeChamp = Object.keys(STANDINGS_CONFIG.championships)[0];
   let activeDisc  = null;
   let activeCat   = null;
 
-  const champTabs  = document.getElementById('champTabs');
-  const discTabs   = document.getElementById('discTabs');
-  const catTabs    = document.getElementById('catTabs');
-  const tableEl    = document.getElementById('tableContainer');
-  const statusEl   = document.getElementById('statusBar');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const ttlLabel   = document.getElementById('ttl-label');
-  const seasonLabel= document.getElementById('season-label');
+  const champTabs   = document.getElementById('champTabs');
+  const discTabs    = document.getElementById('discTabs');
+  const catTabs     = document.getElementById('catTabs');
+  const tableEl     = document.getElementById('tableContainer');
+  const statusEl    = document.getElementById('statusBar');
+  const refreshBtn  = document.getElementById('refreshBtn');
+  const seasonLabel = document.getElementById('season-label');
+  const ttlLabel    = document.getElementById('ttl-label');
 
-
-  /* ── Aplica config guardada desde el admin ── */
+  /* ── Aplica objeto de config a la UI y a STANDINGS_CONFIG ── */
   function applyConfig(cfg) {
     if (!cfg) return;
-    if (cfg.season) {
-      STANDINGS_CONFIG.season = cfg.season;
-      seasonLabel.textContent = cfg.season;
-    }
-    const ttl = Math.max(cfg.wrc_ttl || 3, cfg.cera_ttl || 3, cfg.can_ttl || 3);
-    ttlLabel.textContent = `${ttl} día${ttl !== 1 ? 's' : ''}`;
+    if (cfg.season)   { STANDINGS_CONFIG.season = cfg.season; seasonLabel.textContent = cfg.season; }
+    const ttl = Math.max(cfg.wrc_ttl||3, cfg.cera_ttl||3, cfg.can_ttl||3);
+    ttlLabel.textContent = `${ttl} día${ttl!==1?'s':''}`;
     if (cfg.wrc_id)   STANDINGS_CONFIG.championships.wrc.sheet_id           = cfg.wrc_id;
     if (cfg.cera_id)  STANDINGS_CONFIG.championships.cera.sheet_id          = cfg.cera_id;
     if (cfg.can_id)   STANDINGS_CONFIG.championships.canarias.sheet_id      = cfg.can_id;
@@ -244,90 +231,93 @@ const _dbg = (() => {
     if (cfg.can_ttl)  STANDINGS_CONFIG.championships.canarias.cache_days    = cfg.can_ttl;
   }
 
-  /* 1. Aplica lo que haya en localStorage (instantáneo) */
-  try {
-    const local = JSON.parse(localStorage.getItem('aterura_admin_config') || 'null');
-    if (local) { applyConfig(local); }
-    else { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = `${STANDINGS_CONFIG.default_cache_days} días`; }
-  } catch { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = '3 días'; }
+  /* ── Aplica datos del próximo rally ── */
+  let cdInterval = null;
+  function applyNextRally(r) {
+    if (!r?.date) return;
+    const targetMs = new Date(r.date + 'T00:00:00').getTime();
+    if (isNaN(targetMs)) return;
 
-  /* 2. Descarga _config y _next_rally desde JSONBin en segundo plano */
-  ;(async function syncRemoteSettings() {
+    document.getElementById('nrName').textContent = r.name || '';
+    document.getElementById('nrMeta').textContent = [
+      r.champ, r.location,
+      new Date(r.date).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
+    ].filter(Boolean).join(' · ');
+    document.getElementById('nextRallyBar').style.display = 'block';
+
+    function pad(n) { return String(n).padStart(2,'0'); }
+    function tick() {
+      const diff = targetMs - Date.now();
+      if (diff <= 0) { clearInterval(cdInterval); return; }
+      document.getElementById('cd-d').textContent = pad(Math.floor(diff/864e5));
+      document.getElementById('cd-h').textContent = pad(Math.floor((diff%864e5)/36e5));
+      document.getElementById('cd-m').textContent = pad(Math.floor((diff%36e5)/6e4));
+      const s = pad(Math.floor((diff%6e4)/1e3));
+      const el = document.getElementById('cd-s');
+      el.textContent = s;
+      el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'), 400);
+    }
+    if (cdInterval) clearInterval(cdInterval);
+    tick(); cdInterval = setInterval(tick, 1000);
+  }
+
+  /* ── Carga inicial: siempre desde JSONBin si hay bin_id ── */
+  async function initSettings() {
+    /* Aplica inmediatamente lo que haya en localStorage (evita flash de valores por defecto) */
+    try { applyConfig(JSON.parse(localStorage.getItem('aterura_admin_config')||'null')); } catch {}
+    try { applyNextRally(JSON.parse(localStorage.getItem('aterura_next_rally')||'null')); } catch {}
+
+    /* Valores por defecto si no hay nada en localStorage */
+    if (!seasonLabel.textContent || seasonLabel.textContent === '')
+      seasonLabel.textContent = String(STANDINGS_CONFIG.season);
+    if (!ttlLabel.textContent || ttlLabel.textContent === '')
+      ttlLabel.textContent = `${STANDINGS_CONFIG.default_cache_days} días`;
+
+    const binId = Clasificaciones.Sync.getBinId();
+    if (!binId) {
+      _dbg.log('Sin bin_id — usando solo localStorage y demo data');
+      return null;
+    }
+
+    _dbg.log(`Leyendo JSONBin (bin: ${binId.substring(0,8)}…)`);
     try {
-      if (!Clasificaciones.Sync.getBinId()) return;
-      const remote = await Clasificaciones.Sync.readAll();
-      if (!remote) return;
+      /* syncFull sin TTL — siempre lee fresco */
+      const remote = await Clasificaciones.Sync.syncFull(true);
+      if (!remote) { _dbg.log('JSONBin devolvió vacío'); return null; }
 
-      /* Aplica configuración */
       if (remote._config) {
         localStorage.setItem('aterura_admin_config', JSON.stringify(remote._config));
         applyConfig(remote._config);
-        _dbg.log(`Config remota: temporada=${remote._config.season}, TTL-máx=${Math.max(remote._config.wrc_ttl||3,remote._config.cera_ttl||3,remote._config.can_ttl||3)}d`);
+        _dbg.log(`Config: temporada=${remote._config.season}`);
       }
 
-      /* Aplica próximo rally si no estaba en localStorage */
-      if (remote._next_rally && !localStorage.getItem('aterura_next_rally')) {
+      if (remote._next_rally?.date) {
         localStorage.setItem('aterura_next_rally', JSON.stringify(remote._next_rally));
-        startCountdown(remote._next_rally);
-        _dbg.log(`Próximo rally desde syncRemoteSettings: ${remote._next_rally.name}`);
+        applyNextRally(remote._next_rally);
+        _dbg.log(`Próximo rally: ${remote._next_rally.name}`);
+      } else {
+        /* Si en el bin no hay próximo rally, lo eliminamos del localStorage */
+        localStorage.removeItem('aterura_next_rally');
+        _dbg.log('Sin próximo rally en el bin');
       }
 
-    } catch (e) {
-      _dbg.log(`Settings remotos no disponibles: ${e.message}`);
+      return remote;
+    } catch (err) {
+      _dbg.log(`JSONBin error: ${err.message}`);
+      return null;
     }
-  })();
-
-
-  /* ── Debug: info inicial ── */
-  if (_dbg.active) {
-    const binFile = (typeof SYNC_CONFIG !== 'undefined') ? (SYNC_CONFIG.bin_id || '(vacío)') : '(sync-config.js no cargado)';
-    const binLS   = localStorage.getItem('aterura_sync_binid') || '(vacío)';
-    const binOK   = Clasificaciones.Sync.getBinId();
-    const tsRaw   = parseInt(localStorage.getItem('aterura_remote_ts') || '0');
-    const ageMin  = tsRaw ? Math.round((Date.now() - tsRaw) / 60000) : null;
-    const ttlMin  = (typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60;
-
-    _dbg.log('══ DIAGNÓSTICO ══');
-    _dbg.log(`sync-config.js bin_id : "${binFile}"`);
-    _dbg.log(`localStorage   bin_id : "${binLS}"`);
-    _dbg.log(`bin_id efectivo       : "${binOK || '(vacío → sin JSONBin)'}"`);
-    _dbg.log(`Última sync remota    : ${tsRaw ? `hace ${ageMin}min` : 'nunca'}`);
-    _dbg.log(`TTL configurado       : ${ttlMin}min`);
-    _dbg.log(`¿Buscará JSONBin?     : ${binOK ? ((!tsRaw || ageMin >= ttlMin) ? 'SÍ' : `NO (espera ${ttlMin - ageMin}min)`) : 'NO — bin_id vacío'}`);
-
-    const PREFIX = 'aterura_standings_';
-    const cks = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
-    _dbg.log(`\nCaché local (${cks.length} entradas):`);
-    cks.forEach(k => {
-      try {
-        const e = JSON.parse(localStorage.getItem(k));
-        _dbg.log(`  · ${k.replace(PREFIX,'')} — ${e.data?.rows?.length||0} filas`);
-      } catch { _dbg.log(`  · ${k}: error`); }
-    });
-    if (!cks.length) _dbg.log('  (ninguna)');
-    _dbg.log('');
   }
 
-  /* ── Wrappers con timeout duro ── */
-  async function withTimeout(promise, ms, label) {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout ${ms/1000}s — ${label}`)), ms)
-      )
-    ]);
-  }
-
-  /* ── Construcción de pestañas ── */
+  /* ── Pestañas ── */
   function buildChampTabs() {
     champTabs.innerHTML = '';
     Object.entries(STANDINGS_CONFIG.championships).forEach(([key, champ]) => {
       const btn = document.createElement('button');
-      btn.className = 'st-champ-btn' + (key === activeChamp ? ' active' : '');
-      btn.setAttribute('role', 'tab');
-      btn.setAttribute('aria-selected', key === activeChamp);
+      btn.className = 'st-champ-btn' + (key===activeChamp?' active':'');
+      btn.setAttribute('role','tab');
+      btn.setAttribute('aria-selected', key===activeChamp);
       btn.innerHTML = `<span class="st-champ-icon">${champ.icon}</span>${champ.label}`;
-      btn.addEventListener('click', () => selectChamp(key));
+      btn.addEventListener('click', ()=>selectChamp(key));
       champTabs.appendChild(btn);
     });
   }
@@ -339,10 +329,10 @@ const _dbg = (() => {
     if (!activeDisc || !discs[activeDisc]) activeDisc = keys[0];
     keys.forEach(key => {
       const btn = document.createElement('button');
-      btn.className = 'st-disc-btn' + (key === activeDisc ? ' active' : '');
-      btn.setAttribute('role', 'tab');
+      btn.className = 'st-disc-btn' + (key===activeDisc?' active':'');
+      btn.setAttribute('role','tab');
       btn.textContent = discs[key].label;
-      btn.addEventListener('click', () => selectDisc(key));
+      btn.addEventListener('click', ()=>selectDisc(key));
       discTabs.appendChild(btn);
     });
   }
@@ -354,142 +344,105 @@ const _dbg = (() => {
     if (!activeCat || !cats[activeCat]) activeCat = keys[0];
     keys.forEach(key => {
       const btn = document.createElement('button');
-      btn.className = 'st-cat-btn' + (key === activeCat ? ' active' : '');
-      btn.setAttribute('role', 'tab');
+      btn.className = 'st-cat-btn' + (key===activeCat?' active':'');
+      btn.setAttribute('role','tab');
       btn.textContent = cats[key].label;
-      btn.addEventListener('click', () => selectCat(key));
+      btn.addEventListener('click', ()=>selectCat(key));
       catTabs.appendChild(btn);
     });
   }
 
-  function selectChamp(key) { activeChamp = key; activeDisc = null; activeCat = null; buildChampTabs(); buildDiscTabs(); buildCatTabs(); loadTable(); }
-  function selectDisc(key)  { activeDisc  = key; activeCat  = null;                  buildDiscTabs(); buildCatTabs(); loadTable(); }
-  function selectCat(key)   { activeCat   = key;                                                      buildCatTabs(); loadTable(); }
+  function selectChamp(k) { activeChamp=k; activeDisc=null; activeCat=null; buildChampTabs(); buildDiscTabs(); buildCatTabs(); loadTable(); }
+  function selectDisc(k)  { activeDisc=k;  activeCat=null;                  buildDiscTabs(); buildCatTabs(); loadTable(); }
+  function selectCat(k)   { activeCat=k;                                                      buildCatTabs(); loadTable(); }
 
-  /* ── Carga de datos con timeout duro de 20s ── */
+  /* ── Carga tabla ── */
   async function loadTable(forceRefresh = false) {
     const key = `${activeChamp}::${activeDisc}::${activeCat}`;
-    _dbg.log(`══ CARGANDO: ${key} (force=${forceRefresh}) ══`);
-
+    _dbg.log(`Cargando tabla: ${key} (force=${forceRefresh})`);
     tableEl.innerHTML = '<div class="st-loading">Cargando…</div>';
     statusEl.innerHTML = '';
 
     try {
-      /* Timeout duro: máximo 20 segundos para toda la operación */
-      const dataset = await withTimeout(
+      /* Timeout de 20s para que nunca se quede pillado */
+      const dataset = await Promise.race([
         Clasificaciones.getData(activeChamp, activeDisc, activeCat, forceRefresh),
-        20000,
-        `getData ${key}`
-      );
+        new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout 20s')), 20000))
+      ]);
 
       if (!dataset) {
-        _dbg.log(`❌ null — sin datos en ninguna fuente`);
-        tableEl.innerHTML = '<p class="st-empty">No hay datos disponibles para esta categoría.</p>';
+        _dbg.log(`Sin datos: ${key}`);
+        tableEl.innerHTML = '<p class="st-empty">No hay datos disponibles.</p>';
         return;
       }
 
-      _dbg.log(`✅ OK — ${dataset.rows?.length} filas | demo=${!!dataset._demo} | cache=${!!dataset._fromCache}`);
+      _dbg.log(`Tabla OK: ${dataset.rows?.length} filas | demo=${!!dataset._demo} | cache=${!!dataset._fromCache}`);
       Clasificaciones.renderTable(tableEl, dataset);
       Clasificaciones.renderStatus(statusEl, dataset, activeChamp);
 
     } catch (err) {
-      _dbg.log(`❌ ERROR: ${err.message}`);
-      console.error('[Clasificaciones]', err);
-      /* Si hay timeout o error de red, intenta mostrar demo data directamente */
-      const demoKey = `${activeChamp}::${activeDisc}::${activeCat}`;
-      const demo = (typeof DEMO_DATA !== 'undefined') ? DEMO_DATA[demoKey] : null;
-      if (demo) {
-        _dbg.log(`↩ Fallback a demo data (${demo.rows?.length} filas)`);
-        Clasificaciones.renderTable(tableEl, demo);
-      } else {
-        tableEl.innerHTML = '<p class="st-empty">Error al cargar. Pulsa "Actualizar ahora".</p>';
-      }
+      _dbg.log(`Error tabla: ${err.message}`);
+      /* Fallback directo a demo */
+      const demo = (typeof DEMO_DATA!=='undefined') ? DEMO_DATA[key] : null;
+      if (demo) { Clasificaciones.renderTable(tableEl, demo); }
+      else       { tableEl.innerHTML = '<p class="st-empty">Error al cargar. Pulsa Actualizar.</p>'; }
     }
   }
 
-  /* ── Botón actualizar ── */
+  /* ── Botones ── */
   refreshBtn.addEventListener('click', async () => {
     refreshBtn.classList.add('loading');
+    localStorage.removeItem('aterura_remote_ts'); /* fuerza nueva sync remota */
     Clasificaciones.Cache.clear(`${activeChamp}::${activeDisc}::${activeCat}`);
     await loadTable(true);
     refreshBtn.classList.remove('loading');
   });
 
-  /* ── Botón debug en panel ── */
-  const dbgRefreshBtn = document.getElementById('dbgRefresh');
-  if (dbgRefreshBtn) {
-    dbgRefreshBtn.addEventListener('click', () => {
-      Clasificaciones.Cache.clear(`${activeChamp}::${activeDisc}::${activeCat}`);
-      loadTable(true);
-    });
-  }
-
-  /* ── Auto-refresh al volver a la pestaña ── */
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !Clasificaciones.Cache.get(`${activeChamp}::${activeDisc}::${activeCat}`)) {
-      loadTable();
-    }
+  document.getElementById('dbgRefresh')?.addEventListener('click', () => {
+    localStorage.removeItem('aterura_remote_ts');
+    Clasificaciones.Cache.clearAll();
+    loadTable(true);
   });
 
-  /* ── Cuenta atrás próximo rally ── */
-  function startCountdown(r) {
-    if (!r?.date) return;
-    const bar = document.getElementById('nextRallyBar');
-    const cdD = document.getElementById('cd-d');
-    const cdH = document.getElementById('cd-h');
-    const cdM = document.getElementById('cd-m');
-    const cdS = document.getElementById('cd-s');
-    const targetMs = new Date(r.date + 'T00:00:00').getTime();
-    if (isNaN(targetMs)) return;
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !Clasificaciones.Cache.get(`${activeChamp}::${activeDisc}::${activeCat}`))
+      loadTable();
+  });
 
-    function pad(n) { return String(n).padStart(2, '0'); }
-    function tick() {
-      const diff = targetMs - Date.now();
-      if (diff <= 0) { [cdD,cdH,cdM,cdS].forEach(el => el.textContent='00'); clearInterval(tick._id); return; }
-      cdD.textContent = pad(Math.floor(diff / 864e5));
-      cdH.textContent = pad(Math.floor((diff % 864e5) / 36e5));
-      cdM.textContent = pad(Math.floor((diff % 36e5)  / 6e4));
-      cdS.textContent = pad(Math.floor((diff % 6e4)   / 1e3));
-      cdS.classList.add('pulse'); setTimeout(() => cdS.classList.remove('pulse'), 400);
-    }
-
-    document.getElementById('nrName').textContent = r.name || '';
-    document.getElementById('nrMeta').textContent = [
-      r.champ, r.location,
-      new Date(r.date).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
-    ].filter(Boolean).join(' · ');
-
-    bar.style.display = 'block';
-    if (tick._id) clearInterval(tick._id);
-    tick(); tick._id = setInterval(tick, 1000);
+  /* ── Debug inicial ── */
+  if (_dbg.active) {
+    _dbg.log('══ DIAGNÓSTICO ══');
+    const binId = Clasificaciones.Sync.getBinId();
+    _dbg.log(`bin_id efectivo: "${binId||'(vacío)'}"`);
+    const ts  = parseInt(localStorage.getItem('aterura_remote_ts')||'0');
+    const ttl = (typeof SYNC_CONFIG!=='undefined'?SYNC_CONFIG.remote_ttl_minutes:60)||60;
+    const age = ts ? Math.round((Date.now()-ts)/60000) : null;
+    _dbg.log(`Última sync: ${ts ? `hace ${age}min` : 'nunca'} | TTL: ${ttl}min`);
+    _dbg.log(`¿Fetching JSONBin?: ${binId ? ((!ts||age>=ttl)?'SÍ':'NO (dentro de TTL)') : 'NO (sin bin_id)'}`);
+    const cks = Object.keys(localStorage).filter(k=>k.startsWith('aterura_standings_'));
+    _dbg.log(`Caché local: ${cks.length} entradas`);
+    cks.forEach(k=>{
+      try{const e=JSON.parse(localStorage.getItem(k));_dbg.log(`  · ${k.replace('aterura_standings_','')} — ${e.data?.rows?.length||0} filas`);}catch{}
+    });
+    _dbg.log('');
   }
 
-  ;(async function initNextRally() {
-    /* 1. localStorage (instantáneo) */
-    try {
-      const r = JSON.parse(localStorage.getItem('aterura_next_rally') || 'null');
-      if (r?.date) { startCountdown(r); return; }
-    } catch {}
-
-    /* 2. JSONBin — para dispositivos sin localStorage previo */
-    try {
-      if (!Clasificaciones.Sync.getBinId()) return;
-      const remote = await Clasificaciones.Sync.readAll();
-      const r = remote?._next_rally;
-      if (!r?.date) return;
-      localStorage.setItem('aterura_next_rally', JSON.stringify(r));
-      startCountdown(r);
-      _dbg.log(`Próximo rally desde JSONBin: ${r.name} (${r.date})`);
-    } catch (e) {
-      _dbg.log(`Próximo rally remoto no disponible: ${e.message}`);
-    }
-  })();
-
-  /* ── Init ── */
-  buildChampTabs();
-  buildDiscTabs();
-  buildCatTabs();
-  loadTable();
+  /* ── ARRANQUE ──
+     1. Carga settings remotos (JSONBin) UNA SOLA VEZ
+     2. Construye UI
+     3. Carga tabla (usará la caché recién poblada por initSettings)
+  ── */
+  initSettings().then(() => {
+    buildChampTabs();
+    buildDiscTabs();
+    buildCatTabs();
+    loadTable();
+  }).catch(() => {
+    buildChampTabs();
+    buildDiscTabs();
+    buildCatTabs();
+    loadTable();
+  });
 
 })();
 </script>

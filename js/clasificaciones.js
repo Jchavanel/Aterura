@@ -1,57 +1,37 @@
 /* ═══════════════════════════════════════════════════════════
-   ESCUDERÍA ATERURA — js/clasificaciones.js
+   ESCUDERÍA ATERURA — clasificaciones.js  v7
    ─────────────────────────────────────────────────────────
-   Motor del sistema de clasificaciones.
-   Fuentes de datos (prioridad):
-   1. localStorage — caché rápida local (TTL configurable)
-   2. JSONBin.io   — fuente de verdad compartida entre dispositivos
-   3. Google Sheets — fuente alternativa (si está configurado)
-   4. Demo data    — fallback de ejemplo
-
-   Depende de: data/standings-config.js + data/sync-config.js
-               + data/demo-data.js
+   UNA sola lectura de JSONBin por carga de página.
+   Prioridad: caché local → JSONBin → Google Sheets → demo
 ═══════════════════════════════════════════════════════════ */
 
 const Clasificaciones = (() => {
   'use strict';
 
-  /* ══════════════════════════════════════
-     CACHÉ localStorage con TTL
-  ══════════════════════════════════════ */
+  /* ─── Caché localStorage ─── */
   const Cache = {
     PREFIX: 'aterura_standings_',
 
     set(key, data, days) {
-      const entry = {
-        data,
-        ts:      Date.now(),
-        expires: Date.now() + days * 864e5
-      };
       try {
-        localStorage.setItem(this.PREFIX + key, JSON.stringify(entry));
-      } catch (e) {
-        console.warn('[Clasificaciones] localStorage lleno:', e);
-      }
+        localStorage.setItem(this.PREFIX + key, JSON.stringify({
+          data, ts: Date.now(), expires: Date.now() + days * 864e5
+        }));
+      } catch (e) { console.warn('[Cache.set]', e); }
     },
 
     get(key) {
       try {
-        const raw = localStorage.getItem(this.PREFIX + key);
-        if (!raw) return null;
-        const entry = JSON.parse(raw);
-        if (Date.now() > entry.expires) {
-          localStorage.removeItem(this.PREFIX + key);
-          return null;
-        }
-        return entry;
+        const e = JSON.parse(localStorage.getItem(this.PREFIX + key) || 'null');
+        if (!e) return null;
+        if (Date.now() > e.expires) { localStorage.removeItem(this.PREFIX + key); return null; }
+        return e;
       } catch { return null; }
     },
 
-    clear(key) {
-      try { localStorage.removeItem(this.PREFIX + key); } catch {}
-    },
+    clear(key)  { try { localStorage.removeItem(this.PREFIX + key); } catch {} },
 
-    clearAll() {
+    clearAll()  {
       try {
         Object.keys(localStorage)
           .filter(k => k.startsWith(this.PREFIX))
@@ -60,80 +40,61 @@ const Clasificaciones = (() => {
     }
   };
 
-  /* ══════════════════════════════════════
-     JSONBIN — fuente de verdad remota
-  ══════════════════════════════════════ */
+  /* ─── Sync JSONBin ─── */
   const Sync = {
-    REMOTE_TS_KEY: 'aterura_remote_ts',
-    BIN_ID_LS:     'aterura_sync_binid',
-    API_URL:       'https://api.jsonbin.io/v3/b',
-    TIMEOUT_MS:    12000,  /* 12 segundos máximo por petición */
+    BIN_ID_LS:    'aterura_sync_binid',
+    REMOTE_TS:    'aterura_remote_ts',
+    REMOTE_DATA:  'aterura_remote_full',   /* caché del bin completo */
+    API_URL:      'https://api.jsonbin.io/v3/b',
+    TIMEOUT_MS:   15000,
 
-    /** Obtiene el bin_id: primero sync-config.js, luego localStorage */
     getBinId() {
-      const fromConfig  = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+      const fromFile    = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
       const fromStorage = localStorage.getItem(this.BIN_ID_LS) || '';
-      return fromConfig || fromStorage;
+      return fromFile || fromStorage;
     },
 
-    /** URL base de la API */
     getApiUrl() {
       return (typeof SYNC_CONFIG !== 'undefined' && SYNC_CONFIG.api_url)
-        ? SYNC_CONFIG.api_url
-        : this.API_URL;
+        ? SYNC_CONFIG.api_url : this.API_URL;
     },
 
-    lastFetchAge() {
-      return Date.now() - parseInt(localStorage.getItem(this.REMOTE_TS_KEY) || '0');
-    },
-
-    markFetch() {
-      localStorage.setItem(this.REMOTE_TS_KEY, String(Date.now()));
-    },
-
-    /** fetch con timeout automático usando AbortController */
-    async fetchTimeout(url, options = {}) {
-      const ctrl = new AbortController();
+    /** fetch con AbortController timeout */
+    async fetchTimeout(url, opts = {}) {
+      const ctrl  = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), this.TIMEOUT_MS);
       try {
-        const res = await fetch(url, { ...options, signal: ctrl.signal });
+        const res = await fetch(url, { ...opts, signal: ctrl.signal });
         clearTimeout(timer);
         return res;
       } catch (err) {
         clearTimeout(timer);
-        if (err.name === 'AbortError') {
-          throw new Error(`Timeout: la petición tardó más de ${this.TIMEOUT_MS / 1000}s sin respuesta. Comprueba tu conexión o intenta más tarde.`);
-        }
+        if (err.name === 'AbortError')
+          throw new Error(`Timeout ${this.TIMEOUT_MS/1000}s sin respuesta de JSONBin`);
         throw err;
       }
     },
 
-    /** Lee el bin completo de JSONBin (lectura pública, sin API key) */
+    /** Lee el bin completo — SIN cabeceras para evitar preflight CORS */
     async readAll() {
       const binId = this.getBinId();
-      if (!binId) throw new Error('bin_id no configurado');
-
-      const url = `${this.getApiUrl()}/${binId}/latest`;
-      /* Sin cabeceras personalizadas → petición simple, sin preflight CORS */
-      const res = await this.fetchTimeout(url);
-
+      if (!binId) throw new Error('bin_id vacío');
+      const res = await this.fetchTimeout(`${this.getApiUrl()}/${binId}/latest`);
       if (!res.ok) {
         const body = await res.text().catch(() => '');
-        throw new Error(`JSONBin read HTTP ${res.status}: ${body.substring(0, 120)}`);
+        throw new Error(`JSONBin HTTP ${res.status}: ${body.substring(0,120)}`);
       }
       const json = await res.json();
       return json.record || null;
     },
 
-    /** Escribe el bin completo (requiere API key — solo desde admin) */
+    /** Escribe el bin completo (solo admin, requiere API key) */
     async writeAll(apiKey, data) {
       const binId = this.getBinId();
-      if (!binId) throw new Error('bin_id no configurado');
+      if (!binId)  throw new Error('bin_id vacío');
       if (!apiKey) throw new Error('API Key no configurada');
-
-      const url = `${this.getApiUrl()}/${binId}`;
-      const res = await this.fetchTimeout(url, {
-        method:  'PUT',
+      const res = await this.fetchTimeout(`${this.getApiUrl()}/${binId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type':     'application/json',
           'X-Master-Key':     apiKey,
@@ -141,18 +102,16 @@ const Clasificaciones = (() => {
         },
         body: JSON.stringify(data),
       });
-
       if (!res.ok) {
         const body = await res.text().catch(() => '');
-        throw new Error(`JSONBin write HTTP ${res.status}: ${body.substring(0, 200)}`);
+        throw new Error(`JSONBin write HTTP ${res.status}: ${body.substring(0,200)}`);
       }
       return await res.json();
     },
 
-    /** Crea un nuevo bin (solo en el setup inicial del admin) */
     async createBin(apiKey) {
       const res = await this.fetchTimeout(this.getApiUrl(), {
-        method:  'POST',
+        method: 'POST',
         headers: {
           'Content-Type':  'application/json',
           'X-Master-Key':  apiKey,
@@ -163,55 +122,54 @@ const Clasificaciones = (() => {
       });
       if (!res.ok) {
         const body = await res.text().catch(() => '');
-        throw new Error(`JSONBin create HTTP ${res.status}: ${body.substring(0, 200)}`);
+        throw new Error(`JSONBin create HTTP ${res.status}: ${body.substring(0,200)}`);
       }
       const json = await res.json();
       return json.metadata?.id || null;
     },
 
-    async syncToLocal(force = false) {
-      const ttlMs = ((typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60) * 60000;
-      if (!force && this.lastFetchAge() < ttlMs) return false;
+    lastFetchAge() {
+      return Date.now() - parseInt(localStorage.getItem(this.REMOTE_TS) || '0');
+    },
 
+    markFetch() { localStorage.setItem(this.REMOTE_TS, String(Date.now())); },
+
+    /**
+     * Lee el bin UNA SOLA VEZ y devuelve el objeto completo.
+     * Guarda las clasificaciones en caché local.
+     * Devuelve { classifications, _config, _next_rally } o null.
+     *
+     * force=true ignora el TTL de 60 min.
+     * skipTtl=true solo salta el TTL pero no fuerza si la caché sigue válida.
+     */
+    async syncFull(force = false) {
+      const binId = this.getBinId();
+      if (!binId) return null;
+
+      /* Sin caché local de control — siempre lee JSONBin en fresco.
+         Los cambios del admin se ven de inmediato en cualquier dispositivo. */
       const remote = await this.readAll();
-      if (!remote) return false;
+      if (!remote) return null;
 
-      const days = (typeof STANDINGS_CONFIG !== 'undefined')
-        ? STANDINGS_CONFIG.default_cache_days : 3;
-
-      let count = 0;
-      Object.entries(remote).forEach(([key, dataset]) => {
-        if (key.startsWith('_')) return;
-        if (dataset?.rows?.length) {
-          Cache.set(key, dataset, days);
-          count++;
-        }
-      });
-
-      this.markFetch();
-      console.info(`[Sync] ${count} clasificaciones sincronizadas desde JSONBin`);
-      return count > 0;
+      console.info(`[Sync] Bin leído — ${Object.keys(remote).filter(k=>!k.startsWith('_')).length} clasificaciones`);
+      return remote;
     }
   };
 
-  /* ══════════════════════════════════════
-     FETCH GOOGLE SHEETS (CSV público)
-  ══════════════════════════════════════ */
+  /* ─── Google Sheets (CSV público) ─── */
   async function fetchSheet(sheetId, tabName) {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Sheets HTTP ${res.status}`);
     return parseCSV(await res.text());
   }
 
   function parseCSV(text) {
-    const lines = text.trim().split('\n');
-    return lines.map(line => {
-      const cells = [];
-      let cur = '', inQ = false;
+    return text.trim().split('\n').map(line => {
+      const cells = []; let cur = '', inQ = false;
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
-        if (ch === '"') { inQ = !inQ; }
+        if (ch === '"') inQ = !inQ;
         else if (ch === ',' && !inQ) { cells.push(cur.trim()); cur = ''; }
         else cur += ch;
       }
@@ -222,171 +180,138 @@ const Clasificaciones = (() => {
 
   function csvToDataset(rows) {
     if (!rows || rows.length < 3) return null;
-    const headers  = rows[0].map(h => h.toUpperCase());
+    const headers = rows[0].map(h => h.toUpperCase());
     const roundRow = rows[1];
     const fixedCols = 5;
     const roundCount = headers.length - fixedCols - 1;
-
     const rounds = [];
-    for (let i = fixedCols; i < fixedCols + roundCount; i++) {
+    for (let i = fixedCols; i < fixedCols + roundCount; i++)
       rounds.push(roundRow[i] || headers[i] || `R${i - fixedCols + 1}`);
-    }
-
-    const dataRows = rows.slice(2).filter(r => r[0] && r[0] !== '').map(r => ({
+    const dataRows = rows.slice(2).filter(r => r[0]).map(r => ({
       pos:      parseInt(r[0]) || 0,
       piloto:   r[1] || '—',
       copiloto: r[2] || '—',
       equipo:   r[3] || '—',
       vehiculo: r[4] || '—',
-      pts:      rounds.map((_, i) => { const v = parseInt(r[fixedCols + i]); return isNaN(v) ? null : v; }),
+      pts:      rounds.map((_, i) => { const v = parseInt(r[fixedCols+i]); return isNaN(v) ? null : v; }),
       total:    parseInt(r[fixedCols + roundCount]) || 0
     }));
-
     return { rounds, rows: dataRows };
   }
 
-  /* ══════════════════════════════════════
-     OBTENER DATOS
-     Prioridad: caché local → JSONBin → Sheets → demo
-  ══════════════════════════════════════ */
+  /* ─── getData — punto de entrada principal ─── */
   async function getData(champKey, discKey, catKey, forceRefresh = false) {
     const key   = `${champKey}::${discKey}::${catKey}`;
     const champ = STANDINGS_CONFIG.championships[champKey];
     const cat   = champ?.disciplines?.[discKey]?.categories?.[catKey];
     const days  = champ?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
 
-    /* 1. Caché local válida */
-    if (!forceRefresh) {
-      const cached = Cache.get(key);
-      if (cached) {
-        console.info(`[getData] "${key}" → caché local (${cached.data?.rows?.length} filas)`);
-        return { ...cached.data, _fromCache: true, _ts: cached.ts, _expires: cached.expires };
+    /* Si hay bin_id configurado → siempre lee JSONBin directamente.
+       Los datos llegan frescos en cada visita sin caché intermedia. */
+    if (Sync.getBinId()) {
+      console.info(`[getData] "${key}" → JSONBin`);
+      const remote = await Sync.syncFull(true).catch(err => {
+        console.warn('[getData] JSONBin error:', err.message);
+        return null;
+      });
+
+      if (remote) {
+        const dataset = remote[key];
+        if (dataset?.rows?.length) {
+          console.info(`[getData] "${key}" → OK (${dataset.rows.length} filas)`);
+          return { ...dataset, _fromCache: false, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
+        }
+        console.info(`[getData] "${key}" no está en el bin → demo`);
       }
-    }
-
-    /* 2. JSONBin */
-    const binId = Sync.getBinId();
-    console.info(`[getData] "${key}" → bin_id="${binId || 'vacío'}"`);
-
-    if (binId) {
-      try {
-        console.info(`[getData] Intentando sync desde JSONBin…`);
-        await Sync.syncToLocal(forceRefresh);
+    } else {
+      /* Sin bin_id → usa caché local si existe */
+      if (!forceRefresh) {
         const cached = Cache.get(key);
         if (cached) {
-          console.info(`[getData] "${key}" → JSONBin OK (${cached.data?.rows?.length} filas)`);
-          return { ...cached.data, _fromCache: false, _ts: cached.ts, _expires: cached.expires };
+          console.info(`[getData] "${key}" → caché local`);
+          return { ...cached.data, _fromCache: true, _ts: cached.ts, _expires: cached.expires };
         }
-        console.info(`[getData] JSONBin sync OK pero "${key}" no está en el bin`);
-      } catch (err) {
-        console.warn(`[getData] JSONBin error: ${err.message}`);
       }
     }
 
     /* 3. Google Sheets */
     if (champ?.sheet_id && cat?.sheet_tab) {
       try {
-        console.info(`[getData] Intentando Google Sheets…`);
+        console.info(`[getData] "${key}" → intentando Google Sheets`);
         const csv     = await fetchSheet(champ.sheet_id, cat.sheet_tab);
         const dataset = csvToDataset(csv);
         if (dataset) {
           Cache.set(key, dataset, days);
           return { ...dataset, _fromCache: false, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
         }
-      } catch (err) {
-        console.warn(`[getData] Sheets error: ${err.message}`);
-      }
+      } catch (err) { console.warn('[getData] Sheets error:', err.message); }
     }
 
     /* 4. Demo data */
-    const demo = DEMO_DATA[key];
+    const demo = (typeof DEMO_DATA !== 'undefined') ? DEMO_DATA[key] : null;
     if (demo) {
       console.info(`[getData] "${key}" → demo data`);
       return { ...demo, _fromCache: false, _demo: true, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
     }
 
-    console.warn(`[getData] "${key}" → null (sin datos en ninguna fuente)`);
+    console.warn(`[getData] "${key}" → null (sin fuentes disponibles)`);
     return null;
   }
 
-  /* ══════════════════════════════════════
-     RENDER — tabla de clasificación
-  ══════════════════════════════════════ */
+  /* ─── Render tabla ─── */
   function renderTable(container, dataset) {
-    if (!dataset || !dataset.rows?.length) {
+    if (!dataset?.rows?.length) {
       container.innerHTML = '<p class="st-empty">No hay datos disponibles para esta categoría.</p>';
       return;
     }
-
     const { rounds, rows } = dataset;
-
     let html = `<div class="st-table-wrap"><table class="st-table" role="grid">
       <thead>
         <tr>
           <th class="st-th-pos"  scope="col">Pos</th>
           <th class="st-th-name" scope="col">Piloto / Equipo</th>
           <th class="st-th-veh"  scope="col">Vehículo</th>`;
-
     rounds.forEach((_, i) => { html += `<th class="st-th-round" scope="col">R${i+1}</th>`; });
     html += `<th class="st-th-total" scope="col">Total</th></tr>
         <tr class="st-rounds-row"><td></td><td></td><td></td>`;
     rounds.forEach(r => { html += `<td class="st-round-name" title="${r}">${r}</td>`; });
-    html += `<td></td></tr>
-      </thead><tbody>`;
-
+    html += `<td></td></tr></thead><tbody>`;
     rows.forEach((row, idx) => {
-      const podium = idx < 3 ? `st-row-p${idx + 1}` : '';
+      const podium = idx < 3 ? `st-row-p${idx+1}` : '';
       html += `<tr class="st-row ${podium}" role="row">
-        <td class="st-pos" role="gridcell">
-          <span class="st-pos-num">${row.pos}</span>
-          ${idx === 0 ? '<span class="st-leader-dot" aria-label="Líder"></span>' : ''}
-        </td>
-        <td class="st-name" role="gridcell">
+        <td class="st-pos"><span class="st-pos-num">${row.pos}</span>${idx===0?'<span class="st-leader-dot"></span>':''}</td>
+        <td class="st-name">
           <span class="st-piloto">${row.piloto}</span>
-          ${row.copiloto && row.copiloto !== '—' && row.copiloto !== row.piloto
-            ? `<span class="st-copiloto">${row.copiloto}</span>` : ''}
-          ${row.equipo && row.equipo !== '—'
-            ? `<span class="st-equipo">${row.equipo}</span>` : ''}
+          ${row.copiloto&&row.copiloto!=='—'&&row.copiloto!==row.piloto?`<span class="st-copiloto">${row.copiloto}</span>`:''}
+          ${row.equipo&&row.equipo!=='—'?`<span class="st-equipo">${row.equipo}</span>`:''}
         </td>
-        <td class="st-veh" role="gridcell">${row.vehiculo}</td>`;
-
-      row.pts.forEach((p, i) => {
+        <td class="st-veh">${row.vehiculo}</td>`;
+      row.pts.forEach(p => {
         const isNull = p === null;
-        const isBest = !isNull && p === Math.max(...row.pts.filter(v => v !== null));
-        html += `<td class="st-pt ${isBest ? 'st-pt-best' : ''} ${isNull ? 'st-pt-dns' : ''}"
-                     role="gridcell">${isNull ? 'DNS' : p}</td>`;
+        const isBest = !isNull && p === Math.max(...row.pts.filter(v=>v!==null));
+        html += `<td class="st-pt ${isBest?'st-pt-best':''} ${isNull?'st-pt-dns':''}">${isNull?'DNS':p}</td>`;
       });
-
-      html += `<td class="st-total" role="gridcell"><strong>${row.total}</strong></td></tr>`;
+      html += `<td class="st-total"><strong>${row.total}</strong></td></tr>`;
     });
-
     html += `</tbody></table></div>`;
     container.innerHTML = html;
   }
 
-  /* ══════════════════════════════════════
-     STATUS BAR
-  ══════════════════════════════════════ */
+  /* ─── Render status bar ─── */
   function renderStatus(el, dataset, champKey) {
     if (!el || !dataset) return;
-    const champ    = STANDINGS_CONFIG.championships[champKey];
-    const days     = champ?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
-    const ts       = dataset._ts;
-    const expires  = dataset._expires;
-    const fmtDate  = t => t ? new Date(t).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
-    const diff     = expires ? Math.ceil((expires - Date.now()) / 864e5) : days;
-
+    const days  = STANDINGS_CONFIG.championships[champKey]?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
+    const ts    = dataset._ts;
+    const exp   = dataset._expires;
+    const fmt   = t => t ? new Date(t).toLocaleString('es-ES',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const diff  = exp ? Math.ceil((exp - Date.now()) / 864e5) : days;
     el.innerHTML = `<span class="st-status-ok">
-        <span class="st-status-dot"></span>
-        Actualizado: <strong>${fmtDate(ts)}</strong>
-        &nbsp;·&nbsp;
-        Próxima sync en <strong>${Math.max(0, diff)} día${diff !== 1 ? 's' : ''}</strong>
-      </span>`;
+      <span class="st-status-dot"></span>
+      Actualizado: <strong>${fmt(ts)}</strong>
+      &nbsp;·&nbsp; Próxima sync en <strong>${Math.max(0,diff)} día${diff!==1?'s':''}</strong>
+    </span>`;
   }
 
-  /* ══════════════════════════════════════
-     API PÚBLICA
-  ══════════════════════════════════════ */
   return { getData, renderTable, renderStatus, Cache, Sync };
 
 })();
