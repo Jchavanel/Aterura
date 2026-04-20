@@ -171,12 +171,12 @@
      Cambia el número al hacer deploy si hay problemas de caché
 ═══════════════════════════════════════════ -->
 <script>document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());</script>
-<script src="../data/standings-config.js?v=5"></script>
-<script src="../data/sync-config.js?v=5"></script>
-<script src="../data/demo-data.js?v=5"></script>
-<script src="../js/clasificaciones.js?v=5"></script>
-<script src="../js/nav.js?v=5"></script>
-<script src="../js/animations.js?v=5"></script>
+<script src="../data/standings-config.js?v=6"></script>
+<script src="../data/sync-config.js?v=6"></script>
+<script src="../data/demo-data.js?v=6"></script>
+<script src="../js/clasificaciones.js?v=6"></script>
+<script src="../js/nav.js?v=6"></script>
+<script src="../js/animations.js?v=6"></script>
 
 <script>
 /* ════════════════════════════════════════════════
@@ -251,17 +251,29 @@ const _dbg = (() => {
     else { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = `${STANDINGS_CONFIG.default_cache_days} días`; }
   } catch { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = '3 días'; }
 
-  /* 2. Descarga _config desde JSONBin en segundo plano — actualiza si hay algo más reciente */
-  ;(async function syncRemoteConfig() {
+  /* 2. Descarga _config y _next_rally desde JSONBin en segundo plano */
+  ;(async function syncRemoteSettings() {
     try {
       if (!Clasificaciones.Sync.getBinId()) return;
       const remote = await Clasificaciones.Sync.readAll();
-      if (!remote?._config) return;
-      localStorage.setItem('aterura_admin_config', JSON.stringify(remote._config));
-      applyConfig(remote._config);
-      _dbg.log(`Config remota: temporada=${remote._config.season}, TTL-máx=${Math.max(remote._config.wrc_ttl||3,remote._config.cera_ttl||3,remote._config.can_ttl||3)}d`);
+      if (!remote) return;
+
+      /* Aplica configuración */
+      if (remote._config) {
+        localStorage.setItem('aterura_admin_config', JSON.stringify(remote._config));
+        applyConfig(remote._config);
+        _dbg.log(`Config remota: temporada=${remote._config.season}, TTL-máx=${Math.max(remote._config.wrc_ttl||3,remote._config.cera_ttl||3,remote._config.can_ttl||3)}d`);
+      }
+
+      /* Aplica próximo rally si no estaba en localStorage */
+      if (remote._next_rally && !localStorage.getItem('aterura_next_rally')) {
+        localStorage.setItem('aterura_next_rally', JSON.stringify(remote._next_rally));
+        startCountdown(remote._next_rally);
+        _dbg.log(`Próximo rally desde syncRemoteSettings: ${remote._next_rally.name}`);
+      }
+
     } catch (e) {
-      _dbg.log(`Config remota no disponible: ${e.message}`);
+      _dbg.log(`Settings remotos no disponibles: ${e.message}`);
     }
   })();
 
@@ -420,32 +432,57 @@ const _dbg = (() => {
   });
 
   /* ── Cuenta atrás próximo rally ── */
-  (function initNextRally() {
+  function startCountdown(r) {
+    if (!r?.date) return;
     const bar = document.getElementById('nextRallyBar');
     const cdD = document.getElementById('cd-d');
     const cdH = document.getElementById('cd-h');
     const cdM = document.getElementById('cd-m');
     const cdS = document.getElementById('cd-s');
-    function pad(n) { return String(n).padStart(2,'0'); }
+    const targetMs = new Date(r.date + 'T00:00:00').getTime();
+    if (isNaN(targetMs)) return;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
     function tick() {
       const diff = targetMs - Date.now();
       if (diff <= 0) { [cdD,cdH,cdM,cdS].forEach(el => el.textContent='00'); clearInterval(tick._id); return; }
-      cdD.textContent = pad(Math.floor(diff/864e5));
-      cdH.textContent = pad(Math.floor((diff%864e5)/36e5));
-      cdM.textContent = pad(Math.floor((diff%36e5)/6e4));
-      cdS.textContent = pad(Math.floor((diff%6e4)/1e3));
-      cdS.classList.add('pulse'); setTimeout(()=>cdS.classList.remove('pulse'),400);
+      cdD.textContent = pad(Math.floor(diff / 864e5));
+      cdH.textContent = pad(Math.floor((diff % 864e5) / 36e5));
+      cdM.textContent = pad(Math.floor((diff % 36e5)  / 6e4));
+      cdS.textContent = pad(Math.floor((diff % 6e4)   / 1e3));
+      cdS.classList.add('pulse'); setTimeout(() => cdS.classList.remove('pulse'), 400);
     }
-    let targetMs;
+
+    document.getElementById('nrName').textContent = r.name || '';
+    document.getElementById('nrMeta').textContent = [
+      r.champ, r.location,
+      new Date(r.date).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
+    ].filter(Boolean).join(' · ');
+
+    bar.style.display = 'block';
+    if (tick._id) clearInterval(tick._id);
+    tick(); tick._id = setInterval(tick, 1000);
+  }
+
+  ;(async function initNextRally() {
+    /* 1. localStorage (instantáneo) */
     try {
-      const r = JSON.parse(localStorage.getItem('aterura_next_rally')||'null');
-      if (!r?.date) return;
-      targetMs = new Date(r.date+'T00:00:00').getTime();
-      if (isNaN(targetMs)) return;
-      document.getElementById('nrName').textContent = r.name||'';
-      document.getElementById('nrMeta').textContent = [r.champ,r.location,new Date(r.date).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})].filter(Boolean).join(' · ');
-      bar.style.display='block'; tick(); tick._id=setInterval(tick,1000);
+      const r = JSON.parse(localStorage.getItem('aterura_next_rally') || 'null');
+      if (r?.date) { startCountdown(r); return; }
     } catch {}
+
+    /* 2. JSONBin — para dispositivos sin localStorage previo */
+    try {
+      if (!Clasificaciones.Sync.getBinId()) return;
+      const remote = await Clasificaciones.Sync.readAll();
+      const r = remote?._next_rally;
+      if (!r?.date) return;
+      localStorage.setItem('aterura_next_rally', JSON.stringify(r));
+      startCountdown(r);
+      _dbg.log(`Próximo rally desde JSONBin: ${r.name} (${r.date})`);
+    } catch (e) {
+      _dbg.log(`Próximo rally remoto no disponible: ${e.message}`);
+    }
   })();
 
   /* ── Init ── */

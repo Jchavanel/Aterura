@@ -1216,7 +1216,7 @@ function handleImport(e) {
 /* ─── PRÓXIMO RALLY ─── */
 const NEXT_RALLY_KEY = 'aterura_next_rally';
 
-function saveNextRally() {
+async function saveNextRally() {
   const rally = {
     name:     document.getElementById('next-name').value.trim(),
     champ:    document.getElementById('next-champ').value,
@@ -1224,24 +1224,73 @@ function saveNextRally() {
     location: document.getElementById('next-location').value.trim(),
   };
   if (!rally.name || !rally.date) { showToast('Introduce nombre y fecha', true); return; }
+
+  /* 1. localStorage (este dispositivo) */
   localStorage.setItem(NEXT_RALLY_KEY, JSON.stringify(rally));
+
+  /* 2. JSONBin (todos los dispositivos) */
+  const apiKey = getSyncKey();
+  const binId  = getSyncBinId();
+  if (apiKey && binId) {
+    showToast('Guardando próximo rally…');
+    try {
+      let remote = {};
+      try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+      remote['_next_rally'] = rally;
+      await Clasificaciones.Sync.writeAll(apiKey, remote);
+      showToast('✓ Próximo rally guardado y sincronizado');
+    } catch (err) {
+      showToast('✓ Guardado localmente (error sync: ' + err.message + ')');
+    }
+  } else {
+    showToast('✓ Próximo rally guardado localmente');
+  }
+
   document.getElementById('nextRallySaved').style.display = 'block';
   setTimeout(() => document.getElementById('nextRallySaved').style.display = 'none', 3500);
-  showToast('✓ Próximo rally guardado');
 }
 
-function clearNextRally() {
+async function clearNextRally() {
   localStorage.removeItem(NEXT_RALLY_KEY);
   document.getElementById('next-name').value     = '';
   document.getElementById('next-date').value     = '';
   document.getElementById('next-location').value = '';
+
+  /* Borra también del bin remoto */
+  const apiKey = getSyncKey();
+  const binId  = getSyncBinId();
+  if (apiKey && binId) {
+    try {
+      let remote = {};
+      try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+      delete remote['_next_rally'];
+      await Clasificaciones.Sync.writeAll(apiKey, remote);
+    } catch {}
+  }
   showToast('Próximo rally eliminado');
 }
 
-function loadNextRally() {
+async function loadNextRally() {
+  /* 1. Intenta localStorage primero (instantáneo) */
   try {
     const r = JSON.parse(localStorage.getItem(NEXT_RALLY_KEY) || 'null');
+    if (r) {
+      document.getElementById('next-name').value     = r.name     || '';
+      document.getElementById('next-date').value     = r.date     || '';
+      document.getElementById('next-location').value = r.location || '';
+      if (r.champ) document.getElementById('next-champ').value = r.champ;
+      return; /* Ya tenemos datos, no es necesario ir al bin */
+    }
+  } catch {}
+
+  /* 2. Si no hay en localStorage, busca en JSONBin */
+  const binId = getSyncBinId();
+  if (!binId) return;
+  try {
+    const remote = await Clasificaciones.Sync.readAll();
+    const r = remote?._next_rally;
     if (!r) return;
+    localStorage.setItem(NEXT_RALLY_KEY, JSON.stringify(r));
     document.getElementById('next-name').value     = r.name     || '';
     document.getElementById('next-date').value     = r.date     || '';
     document.getElementById('next-location').value = r.location || '';

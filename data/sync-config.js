@@ -20,12 +20,8 @@
 ═══════════════════════════════════════════════════════════ */
 
 const SYNC_CONFIG = {
-  /* ← const SYNC_CONFIG = {
-  bin_id: '69e5560faaba88219717f782',
-  remote_ttl_minutes: 60,
-  api_url: 'https://api.jsonbin.io/v3/b',
-}; */
-  bin_id: '69e5560faaba88219717f782',
+  /* ← Pega aquí el BIN ID que genera el panel de admin */
+  bin_id: '',
 
   /* Tiempo mínimo entre lecturas remotas (minutos).
      Evita saturar la API gratuita (10k req/mes).
