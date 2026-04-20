@@ -114,9 +114,8 @@ const Clasificaciones = (() => {
       if (!binId) throw new Error('bin_id no configurado');
 
       const url = `${this.getApiUrl()}/${binId}/latest`;
-      const res = await this.fetchTimeout(url, {
-        headers: { 'X-JSON-Privacy': 'false' }
-      });
+      /* Sin cabeceras personalizadas → petición simple, sin preflight CORS */
+      const res = await this.fetchTimeout(url);
 
       if (!res.ok) {
         const body = await res.text().catch(() => '');
@@ -256,26 +255,38 @@ const Clasificaciones = (() => {
     const cat   = champ?.disciplines?.[discKey]?.categories?.[catKey];
     const days  = champ?.cache_days ?? STANDINGS_CONFIG.default_cache_days;
 
-    /* 1. Caché local válida (y no forzamos refresco) */
+    /* 1. Caché local válida */
     if (!forceRefresh) {
       const cached = Cache.get(key);
-      if (cached) return { ...cached.data, _fromCache: true, _ts: cached.ts, _expires: cached.expires };
+      if (cached) {
+        console.info(`[getData] "${key}" → caché local (${cached.data?.rows?.length} filas)`);
+        return { ...cached.data, _fromCache: true, _ts: cached.ts, _expires: cached.expires };
+      }
     }
 
-    /* 2. JSONBin — sincroniza TODO el bin a local y reintenta la caché */
-    if (Sync.getBinId()) {
+    /* 2. JSONBin */
+    const binId = Sync.getBinId();
+    console.info(`[getData] "${key}" → bin_id="${binId || 'vacío'}"`);
+
+    if (binId) {
       try {
+        console.info(`[getData] Intentando sync desde JSONBin…`);
         await Sync.syncToLocal(forceRefresh);
         const cached = Cache.get(key);
-        if (cached) return { ...cached.data, _fromCache: false, _ts: cached.ts, _expires: cached.expires };
+        if (cached) {
+          console.info(`[getData] "${key}" → JSONBin OK (${cached.data?.rows?.length} filas)`);
+          return { ...cached.data, _fromCache: false, _ts: cached.ts, _expires: cached.expires };
+        }
+        console.info(`[getData] JSONBin sync OK pero "${key}" no está en el bin`);
       } catch (err) {
-        console.warn('[Clasificaciones] JSONBin sync error:', err);
+        console.warn(`[getData] JSONBin error: ${err.message}`);
       }
     }
 
     /* 3. Google Sheets */
     if (champ?.sheet_id && cat?.sheet_tab) {
       try {
+        console.info(`[getData] Intentando Google Sheets…`);
         const csv     = await fetchSheet(champ.sheet_id, cat.sheet_tab);
         const dataset = csvToDataset(csv);
         if (dataset) {
@@ -283,14 +294,18 @@ const Clasificaciones = (() => {
           return { ...dataset, _fromCache: false, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
         }
       } catch (err) {
-        console.warn(`[Clasificaciones] Sheets error ${key}:`, err);
+        console.warn(`[getData] Sheets error: ${err.message}`);
       }
     }
 
     /* 4. Demo data */
     const demo = DEMO_DATA[key];
-    if (demo) return { ...demo, _fromCache: false, _demo: true, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
+    if (demo) {
+      console.info(`[getData] "${key}" → demo data`);
+      return { ...demo, _fromCache: false, _demo: true, _ts: Date.now(), _expires: Date.now() + days * 864e5 };
+    }
 
+    console.warn(`[getData] "${key}" → null (sin datos en ninguna fuente)`);
     return null;
   }
 

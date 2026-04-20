@@ -277,17 +277,74 @@
     loadTable();
   }
 
+  /* ── Debug panel — activo con ?debug=1 en la URL ── */
+  const DEBUG = new URLSearchParams(location.search).has('debug');
+  const _dbgLines = [];
+  function dbg(msg) {
+    if (!DEBUG) return;
+    const ts = new Date().toLocaleTimeString('es-ES');
+    _dbgLines.push(`[${ts}] ${msg}`);
+    const el = document.getElementById('debugLog');
+    if (el) el.textContent = _dbgLines.join('\n');
+    document.getElementById('debugPanel').style.display = 'block';
+  }
+
+  if (DEBUG) {
+    const binFile    = (typeof SYNC_CONFIG !== 'undefined') ? (SYNC_CONFIG.bin_id || '(vacío)') : '(archivo no cargado)';
+    const binStorage = localStorage.getItem('aterura_sync_binid') || '(vacío)';
+    const binFinal   = Clasificaciones.Sync.getBinId() || '(NINGUNO — sync desactivado)';
+    const tsRaw      = parseInt(localStorage.getItem('aterura_remote_ts') || '0');
+    const ageMin     = tsRaw ? Math.round((Date.now() - tsRaw) / 60000) : null;
+    const ttlMin     = (typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60;
+
+    dbg('══ DIAGNÓSTICO INICIAL ══');
+    dbg(`sync-config.js bin_id : "${binFile}"`);
+    dbg(`localStorage  bin_id  : "${binStorage}"`);
+    dbg(`bin_id efectivo       : "${binFinal}"`);
+    dbg(`Última sync           : ${tsRaw ? `hace ${ageMin} min` : 'nunca'}`);
+    dbg(`TTL sync              : ${ttlMin} min`);
+    dbg(`¿Buscará en JSONBin?  : ${binFinal !== '(NINGUNO — sync desactivado)' ? ((!tsRaw || ageMin >= ttlMin) ? 'SÍ' : `NO — espera ${ttlMin - ageMin} min más`) : 'NO — bin_id vacío'}`);
+    dbg('');
+    const PREFIX = 'aterura_standings_';
+    const cks = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
+    dbg(`Caché local: ${cks.length} entradas`);
+    cks.forEach(k => {
+      try {
+        const e = JSON.parse(localStorage.getItem(k));
+        dbg(`  · ${k.replace(PREFIX,'')} — ${e.data?.rows?.length||0} filas, expira ${new Date(e.expires).toLocaleString('es-ES')}`);
+      } catch { dbg(`  · ${k}: error`); }
+    });
+    if (!cks.length) dbg('  (ninguna — se usarán datos remotos o demo)');
+    dbg('');
+  }
+
   /* ── Carga y renderiza la tabla ── */
   async function loadTable(forceRefresh = false) {
+    const key = `${activeChamp}::${activeDisc}::${activeCat}`;
+    dbg(`══ CARGANDO ${key} (force=${forceRefresh}) ══`);
+
+    const hit = Clasificaciones.Cache.get(key);
+    dbg(hit ? `Caché local: HIT (${hit.data?.rows?.length} filas)` : 'Caché local: MISS');
+
     tableEl.innerHTML = '<div class="st-loading">Cargando…</div>';
     statusEl.innerHTML = '';
 
     try {
       const dataset = await Clasificaciones.getData(activeChamp, activeDisc, activeCat, forceRefresh);
+
+      if (!dataset) {
+        dbg('❌ getData → null (sin datos en ninguna fuente)');
+        tableEl.innerHTML = '<p class="st-empty">No hay datos disponibles.</p>';
+        return;
+      }
+
+      dbg(`✅ getData OK — ${dataset.rows?.length} filas | demo=${!!dataset._demo} | fromCache=${!!dataset._fromCache}`);
       Clasificaciones.renderTable(tableEl, dataset);
       Clasificaciones.renderStatus(statusEl, dataset, activeChamp);
+
     } catch (err) {
-      console.error('[Clasificaciones] Error cargando datos:', err);
+      dbg(`❌ Error: ${err.message}`);
+      console.error('[Clasificaciones]', err);
       tableEl.innerHTML = '<p class="st-empty">Error cargando los datos. Por favor, inténtalo de nuevo.</p>';
     }
   }
@@ -360,6 +417,14 @@
 
 })();
 </script>
+<!-- ═══ PANEL DEBUG — solo visible con ?debug=1 en la URL ═══ -->
+<div id="debugPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow-y:auto;background:#06080F;border-top:2px solid #F0B800;font-family:monospace;font-size:12px;z-index:9999;padding:12px 16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <strong style="color:#F0B800;letter-spacing:0.1em;">🔍 DEBUG — Clasificaciones</strong>
+    <button onclick="document.getElementById('debugPanel').style.display='none'" style="background:none;border:1px solid #444;color:#888;padding:2px 8px;cursor:pointer;font-size:11px;">✕ cerrar</button>
+  </div>
+  <pre id="debugLog" style="margin:0;color:#8AAAC8;line-height:1.7;white-space:pre-wrap;"></pre>
+</div>
 
 </body>
 </html>
