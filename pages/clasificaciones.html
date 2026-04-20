@@ -150,58 +150,142 @@
 </div>
 
 
-<!-- ═══════ SCRIPTS ═══════ -->
+
+<!-- ═══════════════════════════════════════════
+     DEBUG PANEL — siempre en el DOM, fuera del IIFE
+     Visible desde el botón ⚙ o con ?debug=1
+═══════════════════════════════════════════ -->
+<div id="debugPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:45vh;overflow-y:auto;background:#05080E;border-top:2px solid #F0B800;font-family:monospace;font-size:12px;z-index:9999;padding:12px 16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+    <strong style="color:#F0B800;letter-spacing:0.1em;">🔍 DEBUG — Clasificaciones</strong>
+    <div style="display:flex;gap:8px;">
+      <button id="dbgRefresh" style="background:rgba(240,184,0,0.12);border:1px solid #F0B800;color:#F0B800;padding:3px 10px;cursor:pointer;font-size:11px;font-family:monospace;">↻ Recargar datos</button>
+      <button onclick="document.getElementById('debugPanel').style.display='none'" style="background:none;border:1px solid #444;color:#888;padding:3px 8px;cursor:pointer;font-size:11px;">✕</button>
+    </div>
+  </div>
+  <pre id="debugLog" style="margin:0;color:#8AAAC8;line-height:1.8;white-space:pre-wrap;word-break:break-all;"></pre>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCRIPTS — con v= para forzar cache-bust
+     Cambia el número al hacer deploy si hay problemas de caché
+═══════════════════════════════════════════ -->
 <script>document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());</script>
-<script src="../data/standings-config.js"></script>
-<script src="../data/sync-config.js"></script>
-<script src="../data/demo-data.js"></script>
-<script src="../js/clasificaciones.js"></script>
-<script src="../js/nav.js"></script>
-<script src="../js/animations.js"></script>
+<script src="../data/standings-config.js?v=4"></script>
+<script src="../data/sync-config.js?v=4"></script>
+<script src="../data/demo-data.js?v=4"></script>
+<script src="../js/clasificaciones.js?v=4"></script>
+<script src="../js/nav.js?v=4"></script>
+<script src="../js/animations.js?v=4"></script>
 
 <script>
-/* ── UI Controller ── */
+/* ════════════════════════════════════════════════
+   DEBUG — inicializado ANTES del IIFE principal
+   para capturar errores aunque el IIFE falle
+════════════════════════════════════════════════ */
+const _dbg = (() => {
+  const lines = [];
+  const el    = () => document.getElementById('debugLog');
+  const panel = () => document.getElementById('debugPanel');
+  const active = new URLSearchParams(location.search).has('debug');
+
+  function log(msg) {
+    if (!active) return;
+    const ts = new Date().toLocaleTimeString('es-ES');
+    lines.push(`[${ts}] ${msg}`);
+    try { el().textContent = lines.join('\n'); panel().style.display = 'block'; } catch {}
+  }
+
+  /* Captura errores globales de JS */
+  window.addEventListener('error', ev => {
+    log(`❌ JS ERROR: ${ev.message} (${ev.filename?.split('/').pop()}:${ev.lineno})`);
+    panel() && (panel().style.display = 'block');
+    el() && (el().textContent = lines.join('\n'));
+  });
+
+  return { log, active };
+})();
+
+/* ════════════════════════════════════════════════
+   CONTROLADOR PRINCIPAL
+════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  /* Estado activo */
+  /* ── Estado activo ── */
   let activeChamp = Object.keys(STANDINGS_CONFIG.championships)[0];
   let activeDisc  = null;
   let activeCat   = null;
 
-  const champTabs    = document.getElementById('champTabs');
-  const discTabs     = document.getElementById('discTabs');
-  const catTabs      = document.getElementById('catTabs');
-  const tableEl      = document.getElementById('tableContainer');
-  const statusEl     = document.getElementById('statusBar');
-  const refreshBtn   = document.getElementById('refreshBtn');
-  const ttlLabel     = document.getElementById('ttl-label');
-  const seasonLabel  = document.getElementById('season-label');
+  const champTabs  = document.getElementById('champTabs');
+  const discTabs   = document.getElementById('discTabs');
+  const catTabs    = document.getElementById('catTabs');
+  const tableEl    = document.getElementById('tableContainer');
+  const statusEl   = document.getElementById('statusBar');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const ttlLabel   = document.getElementById('ttl-label');
+  const seasonLabel= document.getElementById('season-label');
 
-  seasonLabel.textContent = STANDINGS_CONFIG.season;
-  ttlLabel.textContent    = `${STANDINGS_CONFIG.default_cache_days} días`;
-
-  /* Lee la configuración guardada desde el admin y la aplica */
-  (function applyAdminConfig() {
-    try {
-      const cfg = JSON.parse(localStorage.getItem('aterura_admin_config') || 'null');
-      if (!cfg) return;
-      if (cfg.season) {
-        STANDINGS_CONFIG.season = cfg.season;
-        seasonLabel.textContent = cfg.season;
-      }
+  /* ── Aplica config guardada desde el admin ── */
+  try {
+    const cfg = JSON.parse(localStorage.getItem('aterura_admin_config') || 'null');
+    if (cfg) {
+      if (cfg.season) { STANDINGS_CONFIG.season = cfg.season; seasonLabel.textContent = cfg.season; }
       const ttl = cfg.wrc_ttl || cfg.cera_ttl || cfg.can_ttl || STANDINGS_CONFIG.default_cache_days;
       ttlLabel.textContent = `${ttl} días`;
-      if (cfg.wrc_id)  STANDINGS_CONFIG.championships.wrc.sheet_id      = cfg.wrc_id;
-      if (cfg.cera_id) STANDINGS_CONFIG.championships.cera.sheet_id     = cfg.cera_id;
-      if (cfg.can_id)  STANDINGS_CONFIG.championships.canarias.sheet_id = cfg.can_id;
-      if (cfg.wrc_ttl)  STANDINGS_CONFIG.championships.wrc.cache_days      = cfg.wrc_ttl;
-      if (cfg.cera_ttl) STANDINGS_CONFIG.championships.cera.cache_days     = cfg.cera_ttl;
-      if (cfg.can_ttl)  STANDINGS_CONFIG.championships.canarias.cache_days = cfg.can_ttl;
-    } catch {}
-  })();
+      if (cfg.wrc_id)   STANDINGS_CONFIG.championships.wrc.sheet_id           = cfg.wrc_id;
+      if (cfg.cera_id)  STANDINGS_CONFIG.championships.cera.sheet_id          = cfg.cera_id;
+      if (cfg.can_id)   STANDINGS_CONFIG.championships.canarias.sheet_id      = cfg.can_id;
+      if (cfg.wrc_ttl)  STANDINGS_CONFIG.championships.wrc.cache_days         = cfg.wrc_ttl;
+      if (cfg.cera_ttl) STANDINGS_CONFIG.championships.cera.cache_days        = cfg.cera_ttl;
+      if (cfg.can_ttl)  STANDINGS_CONFIG.championships.canarias.cache_days    = cfg.can_ttl;
+    } else {
+      seasonLabel.textContent = STANDINGS_CONFIG.season;
+      ttlLabel.textContent    = `${STANDINGS_CONFIG.default_cache_days} días`;
+    }
+  } catch { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = '3 días'; }
 
-  /* ── Renderiza pestañas de campeonato ── */
+  /* ── Debug: info inicial ── */
+  if (_dbg.active) {
+    const binFile = (typeof SYNC_CONFIG !== 'undefined') ? (SYNC_CONFIG.bin_id || '(vacío)') : '(sync-config.js no cargado)';
+    const binLS   = localStorage.getItem('aterura_sync_binid') || '(vacío)';
+    const binOK   = Clasificaciones.Sync.getBinId();
+    const tsRaw   = parseInt(localStorage.getItem('aterura_remote_ts') || '0');
+    const ageMin  = tsRaw ? Math.round((Date.now() - tsRaw) / 60000) : null;
+    const ttlMin  = (typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60;
+
+    _dbg.log('══ DIAGNÓSTICO ══');
+    _dbg.log(`sync-config.js bin_id : "${binFile}"`);
+    _dbg.log(`localStorage   bin_id : "${binLS}"`);
+    _dbg.log(`bin_id efectivo       : "${binOK || '(vacío → sin JSONBin)'}"`);
+    _dbg.log(`Última sync remota    : ${tsRaw ? `hace ${ageMin}min` : 'nunca'}`);
+    _dbg.log(`TTL configurado       : ${ttlMin}min`);
+    _dbg.log(`¿Buscará JSONBin?     : ${binOK ? ((!tsRaw || ageMin >= ttlMin) ? 'SÍ' : `NO (espera ${ttlMin - ageMin}min)`) : 'NO — bin_id vacío'}`);
+
+    const PREFIX = 'aterura_standings_';
+    const cks = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
+    _dbg.log(`\nCaché local (${cks.length} entradas):`);
+    cks.forEach(k => {
+      try {
+        const e = JSON.parse(localStorage.getItem(k));
+        _dbg.log(`  · ${k.replace(PREFIX,'')} — ${e.data?.rows?.length||0} filas`);
+      } catch { _dbg.log(`  · ${k}: error`); }
+    });
+    if (!cks.length) _dbg.log('  (ninguna)');
+    _dbg.log('');
+  }
+
+  /* ── Wrappers con timeout duro ── */
+  async function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout ${ms/1000}s — ${label}`)), ms)
+      )
+    ]);
+  }
+
+  /* ── Construcción de pestañas ── */
   function buildChampTabs() {
     champTabs.innerHTML = '';
     Object.entries(STANDINGS_CONFIG.championships).forEach(([key, champ]) => {
@@ -209,147 +293,88 @@
       btn.className = 'st-champ-btn' + (key === activeChamp ? ' active' : '');
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', key === activeChamp);
-      btn.setAttribute('aria-controls', 'tableContainer');
       btn.innerHTML = `<span class="st-champ-icon">${champ.icon}</span>${champ.label}`;
       btn.addEventListener('click', () => selectChamp(key));
       champTabs.appendChild(btn);
     });
   }
 
-  /* ── Renderiza pestañas de disciplina ── */
   function buildDiscTabs() {
     discTabs.innerHTML = '';
     const discs = STANDINGS_CONFIG.championships[activeChamp]?.disciplines || {};
     const keys  = Object.keys(discs);
     if (!activeDisc || !discs[activeDisc]) activeDisc = keys[0];
-
     keys.forEach(key => {
       const btn = document.createElement('button');
       btn.className = 'st-disc-btn' + (key === activeDisc ? ' active' : '');
       btn.setAttribute('role', 'tab');
-      btn.setAttribute('aria-selected', key === activeDisc);
       btn.textContent = discs[key].label;
       btn.addEventListener('click', () => selectDisc(key));
       discTabs.appendChild(btn);
     });
   }
 
-  /* ── Renderiza tabs de categoría ── */
   function buildCatTabs() {
     catTabs.innerHTML = '';
     const cats = STANDINGS_CONFIG.championships[activeChamp]?.disciplines?.[activeDisc]?.categories || {};
     const keys = Object.keys(cats);
     if (!activeCat || !cats[activeCat]) activeCat = keys[0];
-
     keys.forEach(key => {
       const btn = document.createElement('button');
       btn.className = 'st-cat-btn' + (key === activeCat ? ' active' : '');
       btn.setAttribute('role', 'tab');
-      btn.setAttribute('aria-selected', key === activeCat);
       btn.textContent = cats[key].label;
       btn.addEventListener('click', () => selectCat(key));
       catTabs.appendChild(btn);
     });
   }
 
-  /* ── Selección ── */
-  function selectChamp(key) {
-    activeChamp = key;
-    activeDisc  = null;
-    activeCat   = null;
-    buildChampTabs();
-    buildDiscTabs();
-    buildCatTabs();
-    loadTable();
-  }
+  function selectChamp(key) { activeChamp = key; activeDisc = null; activeCat = null; buildChampTabs(); buildDiscTabs(); buildCatTabs(); loadTable(); }
+  function selectDisc(key)  { activeDisc  = key; activeCat  = null;                  buildDiscTabs(); buildCatTabs(); loadTable(); }
+  function selectCat(key)   { activeCat   = key;                                                      buildCatTabs(); loadTable(); }
 
-  function selectDisc(key) {
-    activeDisc = key;
-    activeCat  = null;
-    buildDiscTabs();
-    buildCatTabs();
-    loadTable();
-  }
-
-  function selectCat(key) {
-    activeCat = key;
-    buildCatTabs();
-    loadTable();
-  }
-
-  /* ── Debug panel — activo con ?debug=1 en la URL ── */
-  const DEBUG = new URLSearchParams(location.search).has('debug');
-  const _dbgLines = [];
-  function dbg(msg) {
-    if (!DEBUG) return;
-    const ts = new Date().toLocaleTimeString('es-ES');
-    _dbgLines.push(`[${ts}] ${msg}`);
-    const el = document.getElementById('debugLog');
-    if (el) el.textContent = _dbgLines.join('\n');
-    document.getElementById('debugPanel').style.display = 'block';
-  }
-
-  if (DEBUG) {
-    const binFile    = (typeof SYNC_CONFIG !== 'undefined') ? (SYNC_CONFIG.bin_id || '(vacío)') : '(archivo no cargado)';
-    const binStorage = localStorage.getItem('aterura_sync_binid') || '(vacío)';
-    const binFinal   = Clasificaciones.Sync.getBinId() || '(NINGUNO — sync desactivado)';
-    const tsRaw      = parseInt(localStorage.getItem('aterura_remote_ts') || '0');
-    const ageMin     = tsRaw ? Math.round((Date.now() - tsRaw) / 60000) : null;
-    const ttlMin     = (typeof SYNC_CONFIG !== 'undefined' ? SYNC_CONFIG.remote_ttl_minutes : 60) || 60;
-
-    dbg('══ DIAGNÓSTICO INICIAL ══');
-    dbg(`sync-config.js bin_id : "${binFile}"`);
-    dbg(`localStorage  bin_id  : "${binStorage}"`);
-    dbg(`bin_id efectivo       : "${binFinal}"`);
-    dbg(`Última sync           : ${tsRaw ? `hace ${ageMin} min` : 'nunca'}`);
-    dbg(`TTL sync              : ${ttlMin} min`);
-    dbg(`¿Buscará en JSONBin?  : ${binFinal !== '(NINGUNO — sync desactivado)' ? ((!tsRaw || ageMin >= ttlMin) ? 'SÍ' : `NO — espera ${ttlMin - ageMin} min más`) : 'NO — bin_id vacío'}`);
-    dbg('');
-    const PREFIX = 'aterura_standings_';
-    const cks = Object.keys(localStorage).filter(k => k.startsWith(PREFIX));
-    dbg(`Caché local: ${cks.length} entradas`);
-    cks.forEach(k => {
-      try {
-        const e = JSON.parse(localStorage.getItem(k));
-        dbg(`  · ${k.replace(PREFIX,'')} — ${e.data?.rows?.length||0} filas, expira ${new Date(e.expires).toLocaleString('es-ES')}`);
-      } catch { dbg(`  · ${k}: error`); }
-    });
-    if (!cks.length) dbg('  (ninguna — se usarán datos remotos o demo)');
-    dbg('');
-  }
-
-  /* ── Carga y renderiza la tabla ── */
+  /* ── Carga de datos con timeout duro de 20s ── */
   async function loadTable(forceRefresh = false) {
     const key = `${activeChamp}::${activeDisc}::${activeCat}`;
-    dbg(`══ CARGANDO ${key} (force=${forceRefresh}) ══`);
-
-    const hit = Clasificaciones.Cache.get(key);
-    dbg(hit ? `Caché local: HIT (${hit.data?.rows?.length} filas)` : 'Caché local: MISS');
+    _dbg.log(`══ CARGANDO: ${key} (force=${forceRefresh}) ══`);
 
     tableEl.innerHTML = '<div class="st-loading">Cargando…</div>';
     statusEl.innerHTML = '';
 
     try {
-      const dataset = await Clasificaciones.getData(activeChamp, activeDisc, activeCat, forceRefresh);
+      /* Timeout duro: máximo 20 segundos para toda la operación */
+      const dataset = await withTimeout(
+        Clasificaciones.getData(activeChamp, activeDisc, activeCat, forceRefresh),
+        20000,
+        `getData ${key}`
+      );
 
       if (!dataset) {
-        dbg('❌ getData → null (sin datos en ninguna fuente)');
-        tableEl.innerHTML = '<p class="st-empty">No hay datos disponibles.</p>';
+        _dbg.log(`❌ null — sin datos en ninguna fuente`);
+        tableEl.innerHTML = '<p class="st-empty">No hay datos disponibles para esta categoría.</p>';
         return;
       }
 
-      dbg(`✅ getData OK — ${dataset.rows?.length} filas | demo=${!!dataset._demo} | fromCache=${!!dataset._fromCache}`);
+      _dbg.log(`✅ OK — ${dataset.rows?.length} filas | demo=${!!dataset._demo} | cache=${!!dataset._fromCache}`);
       Clasificaciones.renderTable(tableEl, dataset);
       Clasificaciones.renderStatus(statusEl, dataset, activeChamp);
 
     } catch (err) {
-      dbg(`❌ Error: ${err.message}`);
+      _dbg.log(`❌ ERROR: ${err.message}`);
       console.error('[Clasificaciones]', err);
-      tableEl.innerHTML = '<p class="st-empty">Error cargando los datos. Por favor, inténtalo de nuevo.</p>';
+      /* Si hay timeout o error de red, intenta mostrar demo data directamente */
+      const demoKey = `${activeChamp}::${activeDisc}::${activeCat}`;
+      const demo = (typeof DEMO_DATA !== 'undefined') ? DEMO_DATA[demoKey] : null;
+      if (demo) {
+        _dbg.log(`↩ Fallback a demo data (${demo.rows?.length} filas)`);
+        Clasificaciones.renderTable(tableEl, demo);
+      } else {
+        tableEl.innerHTML = '<p class="st-empty">Error al cargar. Pulsa "Actualizar ahora".</p>';
+      }
     }
   }
 
-  /* ── Botón de actualización forzada ── */
+  /* ── Botón actualizar ── */
   refreshBtn.addEventListener('click', async () => {
     refreshBtn.classList.add('loading');
     Clasificaciones.Cache.clear(`${activeChamp}::${activeDisc}::${activeCat}`);
@@ -357,55 +382,48 @@
     refreshBtn.classList.remove('loading');
   });
 
-  /* ── Auto-refresh: comprueba al enfocar la pestaña del navegador ── */
+  /* ── Botón debug en panel ── */
+  const dbgRefreshBtn = document.getElementById('dbgRefresh');
+  if (dbgRefreshBtn) {
+    dbgRefreshBtn.addEventListener('click', () => {
+      Clasificaciones.Cache.clear(`${activeChamp}::${activeDisc}::${activeCat}`);
+      loadTable(true);
+    });
+  }
+
+  /* ── Auto-refresh al volver a la pestaña ── */
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-      const key    = `${activeChamp}::${activeDisc}::${activeCat}`;
-      const cached = Clasificaciones.Cache.get(key);
-      if (!cached) loadTable();
+    if (!document.hidden && !Clasificaciones.Cache.get(`${activeChamp}::${activeDisc}::${activeCat}`)) {
+      loadTable();
     }
   });
 
-  /* ── Próximo rally — cuenta atrás ── */
+  /* ── Cuenta atrás próximo rally ── */
   (function initNextRally() {
     const bar = document.getElementById('nextRallyBar');
     const cdD = document.getElementById('cd-d');
     const cdH = document.getElementById('cd-h');
     const cdM = document.getElementById('cd-m');
     const cdS = document.getElementById('cd-s');
-    let targetMs = null;
-
-    function pad(n) { return String(n).padStart(2, '0'); }
-
+    function pad(n) { return String(n).padStart(2,'0'); }
     function tick() {
       const diff = targetMs - Date.now();
-      if (diff <= 0) {
-        [cdD,cdH,cdM,cdS].forEach(el => el.textContent = '00');
-        document.getElementById('nrMeta').textContent += ' — ¡En curso!';
-        clearInterval(tick._id);
-        return;
-      }
-      cdD.textContent = pad(Math.floor(diff / 864e5));
-      cdH.textContent = pad(Math.floor((diff % 864e5) / 36e5));
-      cdM.textContent = pad(Math.floor((diff % 36e5)  / 6e4));
-      cdS.textContent = pad(Math.floor((diff % 6e4)   / 1e3));
-      cdS.classList.add('pulse');
-      setTimeout(() => cdS.classList.remove('pulse'), 400);
+      if (diff <= 0) { [cdD,cdH,cdM,cdS].forEach(el => el.textContent='00'); clearInterval(tick._id); return; }
+      cdD.textContent = pad(Math.floor(diff/864e5));
+      cdH.textContent = pad(Math.floor((diff%864e5)/36e5));
+      cdM.textContent = pad(Math.floor((diff%36e5)/6e4));
+      cdS.textContent = pad(Math.floor((diff%6e4)/1e3));
+      cdS.classList.add('pulse'); setTimeout(()=>cdS.classList.remove('pulse'),400);
     }
-
+    let targetMs;
     try {
-      const r = JSON.parse(localStorage.getItem('aterura_next_rally') || 'null');
+      const r = JSON.parse(localStorage.getItem('aterura_next_rally')||'null');
       if (!r?.date) return;
-      targetMs = new Date(r.date + 'T00:00:00').getTime();
+      targetMs = new Date(r.date+'T00:00:00').getTime();
       if (isNaN(targetMs)) return;
-      document.getElementById('nrName').textContent = r.name || '';
-      document.getElementById('nrMeta').textContent = [
-        r.champ, r.location,
-        new Date(r.date).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
-      ].filter(Boolean).join(' · ');
-      bar.style.display = 'block';
-      tick();
-      tick._id = setInterval(tick, 1000);
+      document.getElementById('nrName').textContent = r.name||'';
+      document.getElementById('nrMeta').textContent = [r.champ,r.location,new Date(r.date).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})].filter(Boolean).join(' · ');
+      bar.style.display='block'; tick(); tick._id=setInterval(tick,1000);
     } catch {}
   })();
 
@@ -417,14 +435,6 @@
 
 })();
 </script>
-<!-- ═══ PANEL DEBUG — solo visible con ?debug=1 en la URL ═══ -->
-<div id="debugPanel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow-y:auto;background:#06080F;border-top:2px solid #F0B800;font-family:monospace;font-size:12px;z-index:9999;padding:12px 16px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <strong style="color:#F0B800;letter-spacing:0.1em;">🔍 DEBUG — Clasificaciones</strong>
-    <button onclick="document.getElementById('debugPanel').style.display='none'" style="background:none;border:1px solid #444;color:#888;padding:2px 8px;cursor:pointer;font-size:11px;">✕ cerrar</button>
-  </div>
-  <pre id="debugLog" style="margin:0;color:#8AAAC8;line-height:1.7;white-space:pre-wrap;"></pre>
-</div>
 
 </body>
 </html>
