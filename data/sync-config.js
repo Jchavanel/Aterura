@@ -34,3 +34,5 @@ const SYNC_CONFIG = {
   /* URL base de la API (no modificar) */
   api_url: 'https://api.jsonbin.io/v3/b',
 };
+
+Activa sincronización JSONBin
