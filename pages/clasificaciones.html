@@ -234,7 +234,7 @@ const _dbg = (() => {
   /* ── Aplica datos del próximo rally ── */
   let cdInterval = null;
   function applyNextRally(r) {
-    if (!r?.date) return;
+    if (!r?.date || !r?.name) return;
     const targetMs = new Date(r.date + 'T00:00:00').getTime();
     if (isNaN(targetMs)) return;
 
@@ -246,9 +246,20 @@ const _dbg = (() => {
     document.getElementById('nextRallyBar').style.display = 'block';
 
     function pad(n) { return String(n).padStart(2,'0'); }
+
     function tick() {
       const diff = targetMs - Date.now();
-      if (diff <= 0) { clearInterval(cdInterval); return; }
+      if (diff <= 0) {
+        /* Fecha pasada o hoy: muestra "En curso" */
+        document.getElementById('cd-d').textContent = '00';
+        document.getElementById('cd-h').textContent = '00';
+        document.getElementById('cd-m').textContent = '00';
+        document.getElementById('cd-s').textContent = '00';
+        document.getElementById('nrMeta').textContent =
+          (document.getElementById('nrMeta').textContent || '') + ' — ¡En curso!';
+        clearInterval(cdInterval);
+        return;
+      }
       document.getElementById('cd-d').textContent = pad(Math.floor(diff/864e5));
       document.getElementById('cd-h').textContent = pad(Math.floor((diff%864e5)/36e5));
       document.getElementById('cd-m').textContent = pad(Math.floor((diff%36e5)/6e4));
@@ -257,8 +268,10 @@ const _dbg = (() => {
       el.textContent = s;
       el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'), 400);
     }
+
     if (cdInterval) clearInterval(cdInterval);
-    tick(); cdInterval = setInterval(tick, 1000);
+    tick();
+    cdInterval = setInterval(tick, 1000);
   }
 
   /* ── Carga inicial: siempre desde JSONBin si hay bin_id ── */
@@ -304,6 +317,13 @@ const _dbg = (() => {
       return remote;
     } catch (err) {
       _dbg.log(`JSONBin error: ${err.message}`);
+      /* Muestra aviso visible si el error es de acceso (403) */
+      if (err.message.includes('403') || err.message.includes('not in allowlist')) {
+        const warn = document.createElement('div');
+        warn.style.cssText = 'background:rgba(217,35,26,0.12);border:1px solid rgba(217,35,26,0.4);padding:10px 16px;margin:0 auto 8px;max-width:1280px;font-family:monospace;font-size:12px;color:#E05050;';
+        warn.textContent = '⚠ JSONBin: acceso denegado (403). Ve a jsonbin.io → Account → API Security → desactiva el Allowlist para que la web funcione en todos los dispositivos.';
+        document.getElementById('tableContainer')?.parentElement?.prepend(warn);
+      }
       return null;
     }
   }
