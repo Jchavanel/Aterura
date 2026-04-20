@@ -907,7 +907,7 @@ function clearCache() { Clasificaciones.Cache.clearAll(); renderCacheList(); sho
 async function refreshCache() { clearCache(); showToast('Caché limpiada. Se sincronizará desde JSONBin en la próxima visita.'); }
 
 /* ─── CONFIGURACIÓN ─── */
-function saveConfig() {
+async function saveConfig() {
   const cfg = {
     wrc_id:   document.getElementById('cfg-wrc-id').value.trim(),
     wrc_ttl:  parseInt(document.getElementById('cfg-wrc-ttl').value) || 3,
@@ -917,17 +917,40 @@ function saveConfig() {
     can_ttl:  parseInt(document.getElementById('cfg-can-ttl').value) || 3,
     season:   parseInt(document.getElementById('cfg-season').value) || 2025,
   };
+
+  /* 1. Guarda en localStorage (este dispositivo) */
   localStorage.setItem(CFG_LS_KEY, JSON.stringify(cfg));
-  STANDINGS_CONFIG.championships.wrc.sheet_id           = cfg.wrc_id;
-  STANDINGS_CONFIG.championships.wrc.cache_days         = cfg.wrc_ttl;
-  STANDINGS_CONFIG.championships.cera.sheet_id          = cfg.cera_id;
-  STANDINGS_CONFIG.championships.cera.cache_days        = cfg.cera_ttl;
-  STANDINGS_CONFIG.championships.canarias.sheet_id      = cfg.can_id;
-  STANDINGS_CONFIG.championships.canarias.cache_days    = cfg.can_ttl;
+
+  /* Aplica en memoria */
+  STANDINGS_CONFIG.championships.wrc.sheet_id        = cfg.wrc_id;
+  STANDINGS_CONFIG.championships.wrc.cache_days      = cfg.wrc_ttl;
+  STANDINGS_CONFIG.championships.cera.sheet_id       = cfg.cera_id;
+  STANDINGS_CONFIG.championships.cera.cache_days     = cfg.cera_ttl;
+  STANDINGS_CONFIG.championships.canarias.sheet_id   = cfg.can_id;
+  STANDINGS_CONFIG.championships.canarias.cache_days = cfg.can_ttl;
   STANDINGS_CONFIG.season = cfg.season;
-  document.getElementById('configSaved').style.display  = 'block';
+
+  document.getElementById('configSaved').style.display = 'block';
   setTimeout(() => document.getElementById('configSaved').style.display = 'none', 4000);
-  showToast('✓ Configuración guardada');
+
+  /* 2. Sincroniza a JSONBin (todos los dispositivos) */
+  const apiKey = getSyncKey();
+  const binId  = getSyncBinId();
+  if (apiKey && binId) {
+    showToast('Guardando y sincronizando configuración…');
+    try {
+      let remote = {};
+      try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+      /* Guarda bajo _config (clave privada, no se renderiza como tabla) */
+      remote['_config'] = cfg;
+      await Clasificaciones.Sync.writeAll(apiKey, remote);
+      showToast('✓ Configuración guardada y sincronizada a todos los dispositivos');
+    } catch (err) {
+      showToast('✓ Guardado localmente (error al sincronizar: ' + err.message + ')', false);
+    }
+  } else {
+    showToast('✓ Configuración guardada localmente');
+  }
 }
 
 function loadConfig() {

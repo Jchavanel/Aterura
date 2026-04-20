@@ -171,12 +171,12 @@
      Cambia el número al hacer deploy si hay problemas de caché
 ═══════════════════════════════════════════ -->
 <script>document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());</script>
-<script src="../data/standings-config.js?v=4"></script>
-<script src="../data/sync-config.js?v=4"></script>
-<script src="../data/demo-data.js?v=4"></script>
-<script src="../js/clasificaciones.js?v=4"></script>
-<script src="../js/nav.js?v=4"></script>
-<script src="../js/animations.js?v=4"></script>
+<script src="../data/standings-config.js?v=5"></script>
+<script src="../data/sync-config.js?v=5"></script>
+<script src="../data/demo-data.js?v=5"></script>
+<script src="../js/clasificaciones.js?v=5"></script>
+<script src="../js/nav.js?v=5"></script>
+<script src="../js/animations.js?v=5"></script>
 
 <script>
 /* ════════════════════════════════════════════════
@@ -226,24 +226,45 @@ const _dbg = (() => {
   const ttlLabel   = document.getElementById('ttl-label');
   const seasonLabel= document.getElementById('season-label');
 
+
   /* ── Aplica config guardada desde el admin ── */
-  try {
-    const cfg = JSON.parse(localStorage.getItem('aterura_admin_config') || 'null');
-    if (cfg) {
-      if (cfg.season) { STANDINGS_CONFIG.season = cfg.season; seasonLabel.textContent = cfg.season; }
-      const ttl = cfg.wrc_ttl || cfg.cera_ttl || cfg.can_ttl || STANDINGS_CONFIG.default_cache_days;
-      ttlLabel.textContent = `${ttl} días`;
-      if (cfg.wrc_id)   STANDINGS_CONFIG.championships.wrc.sheet_id           = cfg.wrc_id;
-      if (cfg.cera_id)  STANDINGS_CONFIG.championships.cera.sheet_id          = cfg.cera_id;
-      if (cfg.can_id)   STANDINGS_CONFIG.championships.canarias.sheet_id      = cfg.can_id;
-      if (cfg.wrc_ttl)  STANDINGS_CONFIG.championships.wrc.cache_days         = cfg.wrc_ttl;
-      if (cfg.cera_ttl) STANDINGS_CONFIG.championships.cera.cache_days        = cfg.cera_ttl;
-      if (cfg.can_ttl)  STANDINGS_CONFIG.championships.canarias.cache_days    = cfg.can_ttl;
-    } else {
-      seasonLabel.textContent = STANDINGS_CONFIG.season;
-      ttlLabel.textContent    = `${STANDINGS_CONFIG.default_cache_days} días`;
+  function applyConfig(cfg) {
+    if (!cfg) return;
+    if (cfg.season) {
+      STANDINGS_CONFIG.season = cfg.season;
+      seasonLabel.textContent = cfg.season;
     }
+    const ttl = Math.max(cfg.wrc_ttl || 3, cfg.cera_ttl || 3, cfg.can_ttl || 3);
+    ttlLabel.textContent = `${ttl} día${ttl !== 1 ? 's' : ''}`;
+    if (cfg.wrc_id)   STANDINGS_CONFIG.championships.wrc.sheet_id           = cfg.wrc_id;
+    if (cfg.cera_id)  STANDINGS_CONFIG.championships.cera.sheet_id          = cfg.cera_id;
+    if (cfg.can_id)   STANDINGS_CONFIG.championships.canarias.sheet_id      = cfg.can_id;
+    if (cfg.wrc_ttl)  STANDINGS_CONFIG.championships.wrc.cache_days         = cfg.wrc_ttl;
+    if (cfg.cera_ttl) STANDINGS_CONFIG.championships.cera.cache_days        = cfg.cera_ttl;
+    if (cfg.can_ttl)  STANDINGS_CONFIG.championships.canarias.cache_days    = cfg.can_ttl;
+  }
+
+  /* 1. Aplica lo que haya en localStorage (instantáneo) */
+  try {
+    const local = JSON.parse(localStorage.getItem('aterura_admin_config') || 'null');
+    if (local) { applyConfig(local); }
+    else { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = `${STANDINGS_CONFIG.default_cache_days} días`; }
   } catch { seasonLabel.textContent = STANDINGS_CONFIG.season; ttlLabel.textContent = '3 días'; }
+
+  /* 2. Descarga _config desde JSONBin en segundo plano — actualiza si hay algo más reciente */
+  ;(async function syncRemoteConfig() {
+    try {
+      if (!Clasificaciones.Sync.getBinId()) return;
+      const remote = await Clasificaciones.Sync.readAll();
+      if (!remote?._config) return;
+      localStorage.setItem('aterura_admin_config', JSON.stringify(remote._config));
+      applyConfig(remote._config);
+      _dbg.log(`Config remota: temporada=${remote._config.season}, TTL-máx=${Math.max(remote._config.wrc_ttl||3,remote._config.cera_ttl||3,remote._config.can_ttl||3)}d`);
+    } catch (e) {
+      _dbg.log(`Config remota no disponible: ${e.message}`);
+    }
+  })();
+
 
   /* ── Debug: info inicial ── */
   if (_dbg.active) {
