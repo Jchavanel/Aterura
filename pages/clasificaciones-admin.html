@@ -615,6 +615,86 @@ Fila 3+:             1   | T.Neuville | M.Wydaeghe | Hyundai WRT | i20N R1 | 25 
       </div>
     </div>
 
+    <!-- ── Sección: Gestión de Noticias ── -->
+    <div class="admin-section" id="noticiasSection">
+      <h3>📰 Gestión de noticias</h3>
+      <p style="font-size:14px;color:var(--light);margin-bottom:20px;line-height:1.6;">
+        Crea, edita y borra noticias. Los cambios se publican en tiempo real en todos los dispositivos.
+      </p>
+
+      <!-- Barra de herramientas -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;">
+          <button class="btn-admin btn-save" onclick="abrirEditorNoticia()">+ Nueva noticia</button>
+          <button class="btn-admin btn-ghost" onclick="loadNoticias()">↻ Recargar</button>
+        </div>
+        <span id="noticias-count" style="font-family:var(--font-condensed);font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);"></span>
+      </div>
+
+      <!-- Lista de noticias guardadas -->
+      <div id="noticiasList" style="display:flex;flex-direction:column;gap:3px;margin-bottom:16px;">
+        <div style="font-family:var(--font-condensed);font-size:13px;color:var(--muted);padding:20px;text-align:center;">Cargando…</div>
+      </div>
+
+      <!-- Editor de noticia (inline, se muestra al crear/editar) -->
+      <div id="noticiaEditor" style="display:none;background:var(--dark-2);border:1px solid rgba(240,184,0,0.2);border-top:3px solid var(--gold-light);padding:28px;margin-top:4px;">
+        <h4 id="editorTitle" style="font-family:var(--font-condensed);font-size:13px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-light);margin-bottom:20px;">Nueva noticia</h4>
+
+        <div class="config-grid">
+          <div class="form-g">
+            <label>Título *</label>
+            <input type="text" id="n-titulo" placeholder="Título de la noticia">
+          </div>
+          <div class="form-g">
+            <label>Categoría</label>
+            <select id="n-categoria">
+              <option value="Competición">Competición</option>
+              <option value="Organización">Organización</option>
+              <option value="Resultados">Resultados</option>
+              <option value="Inscripciones">Inscripciones</option>
+              <option value="Club">Club</option>
+              <option value="Noticias">Noticias generales</option>
+            </select>
+          </div>
+          <div class="form-g">
+            <label>Fecha de publicación *</label>
+            <input type="date" id="n-fecha">
+          </div>
+          <div class="form-g">
+            <label>Autor</label>
+            <input type="text" id="n-autor" placeholder="Escudería Aterura">
+          </div>
+          <div class="form-g">
+            <label>URL imagen (opcional)</label>
+            <input type="url" id="n-imagen" placeholder="https://…/foto.jpg">
+            <span class="hint">Sube la imagen a <a href="https://imgur.com" target="_blank" rel="noopener" style="color:var(--gold-light)">imgur.com</a> o similar y pega la URL directa</span>
+          </div>
+          <div class="form-g">
+            <label>Estado</label>
+            <select id="n-estado">
+              <option value="borrador">Borrador (no visible)</option>
+              <option value="publicada">Publicada (visible)</option>
+            </select>
+          </div>
+          <div class="form-g form-full">
+            <label>Extracto (resumen breve — aparece en la lista)</label>
+            <textarea id="n-extracto" style="min-height:72px;" placeholder="Breve resumen que aparece en la tarjeta de la noticia…"></textarea>
+          </div>
+          <div class="form-g form-full">
+            <label>Contenido completo (separa párrafos con una línea en blanco)</label>
+            <textarea id="n-contenido" style="min-height:220px;" placeholder="Párrafo 1…&#10;&#10;Párrafo 2…&#10;&#10;Párrafo 3…"></textarea>
+            <span class="hint">Escribe el artículo completo. Cada línea en blanco crea un párrafo nuevo.</span>
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-top:20px;">
+          <button class="btn-admin btn-save" onclick="guardarNoticia()">💾 Guardar y publicar</button>
+          <button class="btn-admin btn-ghost" onclick="cerrarEditorNoticia()">Cancelar</button>
+          <button class="btn-admin btn-danger" id="btnBorrarNoticia" onclick="borrarNoticia()" style="display:none;">🗑 Eliminar noticia</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Sección: Gestión de Competiciones ── -->
     <div class="admin-section" id="compSection">
       <h3>🏆 Gestión de competiciones</h3>
@@ -745,6 +825,7 @@ function checkPin() {
     updateManDiscs();
     loadNextRally();
     loadCompeticiones();
+    loadNoticias();
   } else {
     const err = document.getElementById('pinError');
     err.textContent = 'PIN incorrecto. Inténtalo de nuevo.';
@@ -1391,6 +1472,189 @@ async function loadNextRally() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GESTIÓN DE NOTICIAS
+   Datos en JSONBin bajo la clave _noticias (array)
+═══════════════════════════════════════════════════════════ */
+
+let _noticias   = [];    /* array completo en memoria */
+let _editingId  = null;  /* id de la noticia en edición, o null si es nueva */
+
+/* Genera un ID único para cada noticia */
+function genId() { return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+/* Formatea fecha ISO para mostrar */
+function fmtDateAdmin(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' }); }
+  catch { return iso; }
+}
+
+/* Renderiza la lista de noticias en el panel */
+function renderNoticiasList() {
+  const el = document.getElementById('noticiasList');
+  const count = document.getElementById('noticias-count');
+  if (!el) return;
+
+  const total = _noticias.length;
+  const pubs  = _noticias.filter(n => n.estado === 'publicada').length;
+  if (count) count.textContent = `${total} noticia${total!==1?'s':''} · ${pubs} publicada${pubs!==1?'s':''}`;
+
+  if (!total) {
+    el.innerHTML = `<div style="font-family:var(--font-condensed);font-size:13px;color:var(--muted);padding:24px;text-align:center;background:var(--dark-3);">
+      No hay noticias. Pulsa "+ Nueva noticia" para empezar.
+    </div>`;
+    return;
+  }
+
+  const sorted = [..._noticias].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  el.innerHTML = sorted.map(n => `
+    <div style="display:flex;align-items:center;gap:16px;background:var(--dark-3);padding:14px 18px;border-bottom:1px solid rgba(138,170,200,0.05);">
+      <span style="display:inline-block;padding:2px 8px;font-family:var(--font-condensed);font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+        background:${n.estado==='publicada'?'rgba(60,179,113,0.12)':'rgba(138,170,200,0.08)'};
+        color:${n.estado==='publicada'?'#3CB371':'var(--muted)'};
+        border:1px solid ${n.estado==='publicada'?'rgba(60,179,113,0.25)':'rgba(138,170,200,0.15)'};
+        white-space:nowrap;flex-shrink:0;">
+        ${n.estado==='publicada'?'● Publicada':'○ Borrador'}
+      </span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--font-condensed);font-size:14px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.titulo}</div>
+        <div style="font-family:var(--font-condensed);font-size:11px;color:var(--muted);margin-top:2px;">${n.categoria||'Noticias'} · ${fmtDateAdmin(n.fecha)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="editarNoticia('${n.id}')" class="btn-admin btn-ghost" style="padding:4px 12px;font-size:11px;">✏ Editar</button>
+        <button onclick="toggleEstado('${n.id}')" class="btn-admin btn-ghost" style="padding:4px 10px;font-size:11px;"
+          title="${n.estado==='publicada'?'Pasar a borrador':'Publicar'}">${n.estado==='publicada'?'⬇ Ocultar':'⬆ Publicar'}</button>
+      </div>
+    </div>`).join('');
+}
+
+/* Abre el editor en modo "nueva noticia" */
+function abrirEditorNoticia() {
+  _editingId = null;
+  document.getElementById('editorTitle').textContent = 'Nueva noticia';
+  document.getElementById('n-titulo').value    = '';
+  document.getElementById('n-categoria').value = 'Competición';
+  document.getElementById('n-fecha').value     = new Date().toISOString().slice(0,10);
+  document.getElementById('n-autor').value     = 'Escudería Aterura';
+  document.getElementById('n-imagen').value    = '';
+  document.getElementById('n-estado').value    = 'publicada';
+  document.getElementById('n-extracto').value  = '';
+  document.getElementById('n-contenido').value = '';
+  document.getElementById('btnBorrarNoticia').style.display = 'none';
+  document.getElementById('noticiaEditor').style.display = 'block';
+  document.getElementById('noticiaEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* Abre el editor en modo "editar noticia existente" */
+function editarNoticia(id) {
+  const n = _noticias.find(x => x.id === id);
+  if (!n) return;
+  _editingId = id;
+  document.getElementById('editorTitle').textContent = 'Editar noticia';
+  document.getElementById('n-titulo').value    = n.titulo    || '';
+  document.getElementById('n-categoria').value = n.categoria || 'Noticias';
+  document.getElementById('n-fecha').value     = n.fecha     || '';
+  document.getElementById('n-autor').value     = n.autor     || '';
+  document.getElementById('n-imagen').value    = n.imagen    || '';
+  document.getElementById('n-estado').value    = n.estado    || 'borrador';
+  document.getElementById('n-extracto').value  = n.extracto  || '';
+  document.getElementById('n-contenido').value = n.contenido || '';
+  document.getElementById('btnBorrarNoticia').style.display = 'inline-flex';
+  document.getElementById('noticiaEditor').style.display = 'block';
+  document.getElementById('noticiaEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function cerrarEditorNoticia() {
+  document.getElementById('noticiaEditor').style.display = 'none';
+  _editingId = null;
+}
+
+/* Cambia estado publicada ↔ borrador con un clic */
+async function toggleEstado(id) {
+  const n = _noticias.find(x => x.id === id);
+  if (!n) return;
+  n.estado = n.estado === 'publicada' ? 'borrador' : 'publicada';
+  renderNoticiasList();
+  await writeNoticias();
+  showToast(`✓ "${n.titulo.substring(0,30)}…" → ${n.estado}`);
+}
+
+/* Guarda (nueva o edición) */
+async function guardarNoticia() {
+  const titulo = document.getElementById('n-titulo').value.trim();
+  if (!titulo) { showToast('El título es obligatorio', true); return; }
+
+  const noticia = {
+    id:        _editingId || genId(),
+    titulo,
+    categoria: document.getElementById('n-categoria').value,
+    fecha:     document.getElementById('n-fecha').value,
+    autor:     document.getElementById('n-autor').value.trim() || 'Escudería Aterura',
+    imagen:    document.getElementById('n-imagen').value.trim(),
+    estado:    document.getElementById('n-estado').value,
+    extracto:  document.getElementById('n-extracto').value.trim(),
+    contenido: document.getElementById('n-contenido').value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (_editingId) {
+    const idx = _noticias.findIndex(x => x.id === _editingId);
+    if (idx !== -1) _noticias[idx] = noticia;
+  } else {
+    _noticias.unshift(noticia);
+  }
+
+  cerrarEditorNoticia();
+  renderNoticiasList();
+  await writeNoticias();
+  showToast(`✓ "${titulo.substring(0,40)}" guardada y publicada`);
+}
+
+/* Borra la noticia en edición */
+async function borrarNoticia() {
+  if (!_editingId) return;
+  const n = _noticias.find(x => x.id === _editingId);
+  if (!n) return;
+  if (!confirm(`¿Eliminar "${n.titulo}"? Esta acción no se puede deshacer.`)) return;
+  _noticias = _noticias.filter(x => x.id !== _editingId);
+  cerrarEditorNoticia();
+  renderNoticiasList();
+  await writeNoticias();
+  showToast('Noticia eliminada');
+}
+
+/* Escribe el array completo en JSONBin bajo _noticias */
+async function writeNoticias() {
+  const apiKey = getSyncKey();
+  const binId  = getSyncBinId();
+  if (!apiKey || !binId) {
+    showToast('Sin sync configurado — las noticias no se sincronizarán', true);
+    return;
+  }
+  try {
+    let remote = {};
+    try { remote = await Clasificaciones.Sync.readAll() || {}; } catch {}
+    remote['_noticias'] = _noticias;
+    await Clasificaciones.Sync.writeAll(apiKey, remote);
+  } catch (err) {
+    showToast('Error al sincronizar: ' + err.message, true);
+  }
+}
+
+/* Carga noticias desde JSONBin al entrar al admin */
+async function loadNoticias() {
+  const el = document.getElementById('noticiasList');
+  if (el) el.innerHTML = '<div style="font-family:var(--font-condensed);font-size:13px;color:var(--muted);padding:20px;text-align:center;">Cargando…</div>';
+  try {
+    const binId = getSyncBinId();
+    if (!binId) { _noticias = []; renderNoticiasList(); return; }
+    const remote = await Clasificaciones.Sync.readAll();
+    _noticias = remote?._noticias || [];
+  } catch { _noticias = []; }
+  renderNoticiasList();
+}
+
+/* ═══════════════════════════════════════════════════════════
    GESTIÓN DE COMPETICIONES
    Datos guardados en JSONBin bajo la clave _competiciones
 ═══════════════════════════════════════════════════════════ */
@@ -1625,6 +1889,7 @@ if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
   updateManDiscs();
   loadNextRally();
   loadCompeticiones();
+  loadNoticias();
 }
 </script>
 

@@ -535,11 +535,12 @@
       </a>
     </div>
 
-    <div class="news-grid">
+    <!-- Renderizado dinámicamente — fallback estático si JSONBin no responde -->
+    <div id="indexNewsGrid" class="news-grid">
       <div class="news-featured reveal">
         <p class="news-featured-badge">— Noticia destacada</p>
         <h3>Enrique Cruz y Yeray Mujica logran su primera victoria en el Rallye Villa de Teror</h3>
-        <p>Los líderes del Campeonato de Canarias de Rallies de Asfalto se coronan en la cuadragésima edición tras un continuo duelo con Luis Monzón y José Carlos Déniz. El podio lo completaron Julián Falcón y Jacob Páez.</p>
+        <p>Los líderes del Campeonato de Canarias de Rallies de Asfalto se coronan en la cuadragésima edición.</p>
         <p class="news-date">25 de septiembre de 2021</p>
         <div style="margin-top:24px;">
           <a href="pages/noticias.html" class="btn-primary">
@@ -548,21 +549,20 @@
           </a>
         </div>
       </div>
-
       <div class="news-list">
         <a href="pages/noticias.html" class="news-item reveal reveal-delay-1">
           <span class="news-item-date">24 sep 2021</span>
           <h4>La Palma, muy presente en la ceremonia de salida del Rallye</h4>
-          <p>Equipos, aficionados y autoridades rindieron homenaje a la Isla Bonita en el banderazo de inicio.</p>
+          <p>Equipos y aficionados rindieron homenaje a la Isla Bonita en el banderazo de inicio.</p>
         </a>
         <a href="pages/noticias.html" class="news-item reveal reveal-delay-2">
           <span class="news-item-date">Próximamente</span>
-          <h4>Convocatoria Rallye Villa de Teror 2025</h4>
+          <h4>Convocatoria Rallye Villa de Teror 2026</h4>
           <p>Abriremos inscripciones próximamente. Mantente atento a nuestras redes.</p>
         </a>
         <a href="pages/noticias.html" class="news-item reveal reveal-delay-3">
           <span class="news-item-date">Próximamente</span>
-          <h4>Calendario completo de pruebas 2025</h4>
+          <h4>Calendario completo de pruebas 2026</h4>
           <p>Publicaremos las fechas definitivas de todas las pruebas de la temporada en breve.</p>
         </a>
       </div>
@@ -856,6 +856,61 @@
     console.warn('[Competiciones] No se pudo cargar desde JSONBin:', e.message);
     /* Fallback silencioso al HTML estático */
   }
+  /* ── Carga y renderiza noticias ── */
+  (async function loadIndexNoticias() {
+    try {
+      const binId  = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+      const apiUrl = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.api_url : 'https://api.jsonbin.io/v3/b';
+      if (!binId) return;
+
+      const res  = await fetch(`${apiUrl}/${binId}/latest`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const noticias = (json.record?._noticias || [])
+        .filter(n => n.estado === 'publicada')
+        .sort((a,b) => new Date(b.fecha) - new Date(a.fecha))
+        .slice(0, 4); /* máximo 4 en el index */
+
+      if (!noticias.length) return;
+
+      function fmtShort(iso) {
+        if (!iso) return '';
+        try { return new Date(iso).toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' }); }
+        catch { return iso; }
+      }
+
+      const [dest, ...resto] = noticias;
+      const grid = document.getElementById('indexNewsGrid');
+      if (!grid) return;
+
+      const arrowSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+      grid.innerHTML = `
+        <div class="news-featured reveal">
+          <p class="news-featured-badge">— ${dest.categoria||'Noticia destacada'}</p>
+          <h3>${dest.titulo}</h3>
+          <p>${dest.extracto||''}</p>
+          <p class="news-date">${fmtShort(dest.fecha)}${dest.autor?` · ${dest.autor}`:''}</p>
+          <div style="margin-top:24px;">
+            <a href="pages/noticias.html" class="btn-primary">
+              Leer más ${arrowSvg}
+            </a>
+          </div>
+        </div>
+        <div class="news-list">
+          ${resto.map((n,i)=>`
+            <a href="pages/noticias.html" class="news-item reveal reveal-delay-${i+1}">
+              <span class="news-item-date">${fmtShort(n.fecha)}</span>
+              <h4>${n.titulo}</h4>
+              <p>${n.extracto||''}</p>
+            </a>`).join('')}
+        </div>`;
+
+    } catch (e) {
+      console.warn('[Index noticias]', e.message);
+    }
+  })();
+
 })();
 </script>
 
