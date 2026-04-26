@@ -1617,6 +1617,8 @@ async function loadCompeticiones() {
   updateCompPreview();
 }
 
+/* ─── Init ─── */
+if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
   loadConfig();
   renderSyncStatus();
   renderCacheList();
