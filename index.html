@@ -537,7 +537,7 @@
 
     <!-- Renderizado dinámicamente — fallback estático si JSONBin no responde -->
     <div id="indexNewsGrid" class="news-grid">
-      <div class="news-featured reveal">
+      <div class="news-featured">
         <p class="news-featured-badge">— Noticia destacada</p>
         <h3>Enrique Cruz y Yeray Mujica logran su primera victoria en el Rallye Villa de Teror</h3>
         <p>Los líderes del Campeonato de Canarias de Rallies de Asfalto se coronan en la cuadragésima edición.</p>
@@ -550,17 +550,17 @@
         </div>
       </div>
       <div class="news-list">
-        <a href="pages/noticias.html" class="news-item reveal reveal-delay-1">
+        <a href="pages/noticias.html" class="news-item">
           <span class="news-item-date">24 sep 2021</span>
           <h4>La Palma, muy presente en la ceremonia de salida del Rallye</h4>
           <p>Equipos y aficionados rindieron homenaje a la Isla Bonita en el banderazo de inicio.</p>
         </a>
-        <a href="pages/noticias.html" class="news-item reveal reveal-delay-2">
+        <a href="pages/noticias.html" class="news-item">
           <span class="news-item-date">Próximamente</span>
           <h4>Convocatoria Rallye Villa de Teror 2026</h4>
           <p>Abriremos inscripciones próximamente. Mantente atento a nuestras redes.</p>
         </a>
-        <a href="pages/noticias.html" class="news-item reveal reveal-delay-3">
+        <a href="pages/noticias.html" class="news-item">
           <span class="news-item-date">Próximamente</span>
           <h4>Calendario completo de pruebas 2026</h4>
           <p>Publicaremos las fechas definitivas de todas las pruebas de la temporada en breve.</p>
@@ -901,7 +901,7 @@
     const grid = document.getElementById('indexNewsGrid');
     if (grid) {
       grid.innerHTML = `
-        <div class="news-featured reveal" style="cursor:pointer;" onclick="_indexOpenArticle('${dest.id}')">
+        <div class="news-featured" style="cursor:pointer;" onclick="_indexOpenArticle('${dest.id}')">
           <p class="news-featured-badge">— ${dest.categoria||'Noticia destacada'}</p>
           <h3>${dest.titulo}</h3>
           <p>${dest.extracto||''}</p>
@@ -914,7 +914,7 @@
         </div>
         <div class="news-list">
           ${resto.map((n,i)=>`
-            <div class="news-item reveal reveal-delay-${i+1}" style="cursor:pointer;" onclick="_indexOpenArticle('${n.id}')">
+            <div class="news-item" style="cursor:pointer;" onclick="_indexOpenArticle('${n.id}')">
               <span class="news-item-date">${fmtShort(n.fecha)}</span>
               <h4>${n.titulo}</h4>
               <p>${n.extracto||''}</p>
