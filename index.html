@@ -781,164 +781,125 @@
 <script src="data/sync-config.js"></script>
 
 <script>
-/* ── Renderiza las tarjetas de competición desde JSONBin ── */
-(async function loadCompeticiones() {
-  const arrowSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+/* ════════════════════════════════════════════════════════
+   ESCUDERÍA ATERURA — index.html — carga dinámica
+   UN SOLO fetch a JSONBin reparte datos a:
+     · Competiciones  (_competiciones)
+     · Temporada      (_config.season)
+     · Noticias       (_noticias)
+════════════════════════════════════════════════════════ */
+(async function initIndex() {
 
-  function renderCard(c, delay) {
-    const metas = [[c.m1l,c.m1v],[c.m2l,c.m2v],[c.m3l,c.m3v]]
-      .filter(([l,v]) => l || v)
-      .map(([l,v]) => `<div class="comp-meta-item"><span class="meta-label">${l}</span><span class="meta-val">${v}</span></div>`)
-      .join('');
+  /* ── 1. Lee el bin (una sola petición) ── */
+  const binId  = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
+  const apiUrl = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.api_url : 'https://api.jsonbin.io/v3/b';
 
-    return `<a href="${c.url||'#'}" class="comp-card reveal${delay?` reveal-delay-${delay}`:''}">
-      <span class="comp-card-number" aria-hidden="true">${c.numero||''}</span>
-      <span class="${c.badge_tipo||'badge-outline'}">${c.badge_texto||''}</span>
-      <h3>${c.titulo1||''}<br>${c.titulo2||''}</h3>
-      <p>${c.desc||''}</p>
-      ${metas ? `<div class="comp-card-meta">${metas}</div>` : ''}
-      <div class="comp-card-arrow" aria-hidden="true">${arrowSvg}</div>
-    </a>`;
-  }
-
-  /* Actualiza también la etiqueta de temporada */
-  function applyConfig(cfg) {
-    if (cfg?.season) {
-      const el = document.getElementById('comp-season-label');
-      if (el) el.textContent = `Temporada ${cfg.season}`;
+  let remote = null;
+  if (binId) {
+    try {
+      const res = await fetch(`${apiUrl}/${binId}/latest`);
+      if (res.ok) {
+        const json = await res.json();
+        remote = json.record || null;
+      }
+    } catch (e) {
+      console.warn('[Index] JSONBin no disponible:', e.message);
     }
   }
 
-  try {
-    const binId = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
-    if (!binId) return; /* Sin bin_id → muestra el HTML estático */
+  /* ── 2. Competiciones ── */
+  if (remote?._competiciones?.length) {
+    const arrowSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-    const res  = await fetch(`${SYNC_CONFIG.api_url}/${binId}/latest`);
-    if (!res.ok) return;
-    const json = await res.json();
-    const remote = json.record;
-    if (!remote) return;
+    function renderCard(c, delay) {
+      const metas = [[c.m1l,c.m1v],[c.m2l,c.m2v],[c.m3l,c.m3v]]
+        .filter(([l,v]) => l || v)
+        .map(([l,v]) => `<div class="comp-meta-item"><span class="meta-label">${l}</span><span class="meta-val">${v}</span></div>`)
+        .join('');
+      return `<a href="${c.url||'#'}" class="comp-card reveal${delay?` reveal-delay-${delay}`:''}">
+        <span class="comp-card-number" aria-hidden="true">${c.numero||''}</span>
+        <span class="${c.badge_tipo||'badge-outline'}">${c.badge_texto||''}</span>
+        <h3>${c.titulo1||''}<br>${c.titulo2||''}</h3>
+        <p>${c.desc||''}</p>
+        ${metas ? `<div class="comp-card-meta">${metas}</div>` : ''}
+        <div class="comp-card-arrow" aria-hidden="true">${arrowSvg}</div>
+      </a>`;
+    }
 
-    /* Aplica config (temporada) */
-    if (remote._config) applyConfig(remote._config);
-
-    /* Renderiza competiciones si existen en el bin */
-    if (remote._competiciones?.length) {
-      const grid = document.getElementById('compGrid');
-      if (grid) {
-        const delays = [0, 1, 2, 3];
-        grid.innerHTML = remote._competiciones
-          .map((c, i) => renderCard(c, delays[i] || 0))
-          .join('');
-
-        /* Re-observa los nuevos elementos para las animaciones */
+    const grid = document.getElementById('compGrid');
+    if (grid) {
+      grid.innerHTML = remote._competiciones.map((c,i) => renderCard(c,[0,1,2,3][i]||0)).join('');
+      if (typeof IntersectionObserver !== 'undefined') {
+        const obs = new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.style.cssText += 'opacity:1;transform:translateY(0);transition:opacity 0.7s ease,transform 0.7s ease;';
+              obs.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.08 });
         grid.querySelectorAll('.reveal').forEach(el => {
           el.style.opacity = '0';
           el.style.transform = 'translateY(32px)';
+          obs.observe(el);
         });
-        if (typeof IntersectionObserver !== 'undefined') {
-          const obs = new IntersectionObserver(entries => {
-            entries.forEach(e => {
-              if (e.isIntersecting) {
-                e.target.style.opacity = '1';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-                obs.unobserve(e.target);
-              }
-            });
-          }, { threshold: 0.08 });
-          grid.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-        }
       }
     }
-
-  } catch (e) {
-    console.warn('[Competiciones] No se pudo cargar desde JSONBin:', e.message);
-    /* Fallback silencioso al HTML estático */
   }
-  /* ════════════════════════════════════════
-     NOTICIAS — carga, modal y renderizado
-  ════════════════════════════════════════ */
-  (async function loadIndexNoticias() {
 
-    const modal      = document.getElementById('indexArticleModal');
-    const modalBody  = document.getElementById('indexArticleContent');
-    const closeBtn   = document.getElementById('indexArticleClose');
-    let   _noticias  = [];
+  /* ── 3. Temporada (config) ── */
+  if (remote?._config?.season) {
+    const el = document.getElementById('comp-season-label');
+    if (el) el.textContent = `Temporada ${remote._config.season}`;
+  }
 
-    /* Cierre del modal */
-    function closeModal() {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
+  /* ── 4. Noticias ── */
+  const noticias = (remote?._noticias || [])
+    .filter(n => n.estado === 'publicada')
+    .sort((a,b) => new Date(b.fecha) - new Date(a.fecha))
+    .slice(0, 4);
+
+  if (noticias.length) {
+    /* Modal */
+    const modal     = document.getElementById('indexArticleModal');
+    const modalBody = document.getElementById('indexArticleContent');
+    const closeBtn  = document.getElementById('indexArticleClose');
+
+    function closeModal() { modal.style.display='none'; document.body.style.overflow=''; }
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+    modal.addEventListener('click', e => { if (e.target===modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
 
-    /* Formato fecha */
     function fmtLong(iso) {
       if (!iso) return '';
-      try { return new Date(iso).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }); }
-      catch { return iso; }
+      try { return new Date(iso).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}); } catch { return iso; }
     }
     function fmtShort(iso) {
       if (!iso) return '';
-      try { return new Date(iso).toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' }); }
-      catch { return iso; }
+      try { return new Date(iso).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}); } catch { return iso; }
     }
 
-    /* Abre el modal con el artículo completo */
-    function openArticle(id) {
-      const n = _noticias.find(x => x.id === id);
+    window._indexOpenArticle = function(id) {
+      const n = noticias.find(x => x.id === id);
       if (!n) return;
-
-      const imgHtml = n.imagen
-        ? `<img src="${n.imagen}" alt="${n.titulo}"
-             style="width:100%;max-height:340px;object-fit:cover;display:block;margin-bottom:28px;"
-             onerror="this.style.display='none'">`
-        : '';
-
-      const bodyHtml = (n.contenido || n.extracto || '')
-        .split('\n\n').filter(Boolean)
-        .map(p => `<p style="font-size:15px;color:var(--light);line-height:1.85;margin-bottom:18px;">${p.replace(/\n/g,'<br>')}</p>`)
-        .join('');
-
+      const imgHtml  = n.imagen ? `<img src="${n.imagen}" alt="${n.titulo}" style="width:100%;max-height:340px;object-fit:cover;display:block;margin-bottom:28px;" onerror="this.style.display='none'">` : '';
+      const bodyHtml = (n.contenido||n.extracto||'').split('\n\n').filter(Boolean)
+        .map(p=>`<p style="font-size:15px;color:var(--light);line-height:1.85;margin-bottom:18px;">${p.replace(/\n/g,'<br>')}</p>`).join('');
       modalBody.innerHTML = `
-        <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold-light);margin-bottom:14px;">
-          ${n.categoria||'Noticias'}
-        </p>
-        <h2 style="font-family:var(--font-display);font-size:clamp(26px,4vw,44px);line-height:0.95;color:var(--white);margin-bottom:18px;">
-          ${n.titulo}
-        </h2>
-        <p style="font-family:var(--font-condensed);font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid rgba(138,170,200,0.08);">
-          ${fmtLong(n.fecha)}${n.autor ? ` · ${n.autor}` : ''}
-        </p>
-        ${imgHtml}
-        ${bodyHtml || '<p style="color:var(--muted);">Sin contenido.</p>'}`;
-
+        <p style="font-family:var(--font-condensed);font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold-light);margin-bottom:14px;">${n.categoria||'Noticias'}</p>
+        <h2 style="font-family:var(--font-display);font-size:clamp(26px,4vw,44px);line-height:0.95;color:var(--white);margin-bottom:18px;">${n.titulo}</h2>
+        <p style="font-family:var(--font-condensed);font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid rgba(138,170,200,0.08);">${fmtLong(n.fecha)}${n.autor?` · ${n.autor}`:''}</p>
+        ${imgHtml}${bodyHtml||'<p style="color:var(--muted);">Sin contenido.</p>'}`;
       modal.style.display = 'block';
       modal.scrollTop = 0;
       document.body.style.overflow = 'hidden';
-    }
+    };
 
-    /* Expone la función globalmente para los onclick */
-    window._indexOpenArticle = openArticle;
-
-    /* Renderiza el grid de noticias en el index */
-    function renderIndexNews(noticias) {
-      _noticias = noticias
-        .filter(n => n.estado === 'publicada')
-        .sort((a,b) => new Date(b.fecha) - new Date(a.fecha))
-        .slice(0, 4);
-
-      if (!_noticias.length) return; /* deja el HTML estático */
-
-      const [dest, ...resto] = _noticias;
-      const grid = document.getElementById('indexNewsGrid');
-      if (!grid) return;
-
-      const arrowSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
+    /* Renderiza el grid */
+    const [dest, ...resto] = noticias;
+    const arrowSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const grid = document.getElementById('indexNewsGrid');
+    if (grid) {
       grid.innerHTML = `
         <div class="news-featured reveal" style="cursor:pointer;" onclick="_indexOpenArticle('${dest.id}')">
           <p class="news-featured-badge">— ${dest.categoria||'Noticia destacada'}</p>
@@ -960,23 +921,7 @@
             </div>`).join('')}
         </div>`;
     }
-
-    /* Descarga desde JSONBin */
-    try {
-      const binId  = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.bin_id : '';
-      const apiUrl = (typeof SYNC_CONFIG !== 'undefined') ? SYNC_CONFIG.api_url : 'https://api.jsonbin.io/v3/b';
-      if (!binId) return;
-
-      const res  = await fetch(`${apiUrl}/${binId}/latest`);
-      if (!res.ok) return;
-      const json = await res.json();
-      renderIndexNews(json.record?._noticias || []);
-    } catch (e) {
-      console.warn('[Index noticias]', e.message);
-      /* Fallback silencioso: el HTML estático permanece visible */
-    }
-
-  })();
+  }
 
 })();
 </script>
